@@ -4,16 +4,9 @@ from PIL import Image
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from config.utils.models import Entity
+
 User = get_user_model()
-
-
-class Entity(models.Model):
-    class Meta:
-        abstract = True
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created = models.DateTimeField(editable=False, auto_now_add=True)
-    updated = models.DateTimeField(editable=False, auto_now=True)
 
 
 class Product(Entity):

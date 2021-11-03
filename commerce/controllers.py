@@ -2,20 +2,23 @@ import random
 import string
 from typing import List
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from pydantic import UUID4
 
+from account.authorization import GlobalAuth
 from commerce.models import Product, Category, City, Vendor, Item, Order, OrderStatus
-from commerce.schemas import MessageOut, ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate
+from commerce.schemas import ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate
+from config.utils.schemas import MessageOut
 
 products_controller = Router(tags=['products'])
 address_controller = Router(tags=['addresses'])
 vendor_controller = Router(tags=['vendors'])
 order_controller = Router(tags=['orders'])
 
+User = get_user_model()
 
 @vendor_controller.get('', response=List[VendorOut])
 def list_vendors(request):
@@ -228,7 +231,7 @@ def generate_ref_code():
     return ''.join(random.sample(string.ascii_letters + string.digits, 6))
 
 
-@order_controller.post('create-order', response=MessageOut)
+@order_controller.post('create-order', auth=GlobalAuth(), response=MessageOut)
 def create_order(request):
     '''
     * add items and mark (ordered) field as True

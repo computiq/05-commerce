@@ -15,14 +15,10 @@ D
 ,.idea/inspectionProfiles/Project_Default.xml,4/9/496a238a6afa168dbaf6efd37bb459331589579c
 @
 account/tests.py,8/1/816a718040e81705eecf3d2ee5661e3df09ee75b
-@
-account/admin.py,d/2/d25b89b2b521eab8cc69654cb14f7b5c9baa0078
 ^
 ..idea/inspectionProfiles/profiles_settings.xml,1/e/1e9075f5bf079c01ef2c910709e91a497d262080
 ?
 account/apps.py,3/8/3899eaa57c40eb771c98133213ba36b6448c9fff
-@
-account/views.py,5/8/584f03f4131c5dfe019da9d46a8e94181b3b5821
 N
 account/migrations/__init__.py,7/b/7bc8a653bcb2d639a49932a5ceac337f728844b4
 @
@@ -32,19 +28,15 @@ O
 @
 requirements.txt,1/9/19359a61ae2446b51b549167b014da2fcf265768
 A
-account/models.py,9/9/9937dda3027dc290afca56146cdf71d4733d0e5b
-A
 commerce/tests.py,5/2/52ea416cfb7f2a70c29e2ed02817ad03d3de8885
 :
 
 .gitignore,a/5/a5cc2925ca8258af241be7e5b0381edf30266302
-B
-config/settings.py,7/6/769aa6664d3e5c284cbfb95fd9848a351a2e4e2b
 A
 commerce/admin.py,d/7/d7369e273d90449ac8ca98014a010a921d984597
 ^
 .commerce/migrations/0002_auto_20211027_1637.py,d/a/daa0931328d2da3ea0d7525a016a5059103dbb53
 9
 	manage.py,3/1/3156ad13e4d695cd526bbb7b031016ecba842270
->
-config/urls.py,4/5/45b243d494ecd78f07818174452843086c64845d
+9
+	README.md,8/e/8ec9a00bfd09b3190ac6b22251dbb1aa95a0579d

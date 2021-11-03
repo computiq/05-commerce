@@ -1,0 +1,49 @@
+GET localhost:8000/api/auth
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+
+###
+POST localhost:8000/api/auth/signin
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "user@example.com",
+  "password": "!!123123!!"
+}
+
+###
+GET localhost:8000/api/auth
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+
+###
+PUT localhost:8000/api/auth
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+
+{
+  "first_name": "Layth",
+  "last_name": "Zahid",
+  "phone_number": "077",
+  "address1": "Anything",
+  "address2": "",
+  "company_name": "",
+  "company_website": ""
+}
+
+
+###
+POST localhost:8000/api/auth/change-password
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+
+{
+  "old_password": "string!!",
+  "new_password1": "!!123123!!",
+  "new_password2": "!!123123!!"
+}
