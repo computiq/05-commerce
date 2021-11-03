@@ -11,7 +11,7 @@ Task resolution process:
 
 # Task 5
 
-This task in complimentary task for the ongoing project (COMMERCE).
+This task is a complimentary task for the ongoing project (COMMERCE).
 
 Note: don't forget to `makemigrations` and `migrate`
 
