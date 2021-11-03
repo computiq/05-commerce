@@ -15,5 +15,5 @@ This task in complimentary task for the ongoing project (COMMERCE).
 
 Note: don't forget to `makemigrations` and `migrate`
 
-* secure all API endpoints that requires security
+* secure all API endpoints that requires authorization
 * update the implementation accordingly, replace the hardcoded user with the respective implementation to retrieve the current user.
