@@ -38,5 +38,3 @@ A
 .commerce/migrations/0002_auto_20211027_1637.py,d/a/daa0931328d2da3ea0d7525a016a5059103dbb53
 9
 	manage.py,3/1/3156ad13e4d695cd526bbb7b031016ecba842270
-9
-	README.md,8/e/8ec9a00bfd09b3190ac6b22251dbb1aa95a0579d
