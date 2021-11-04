@@ -1,13 +1,14 @@
 from typing import List
 
+from django.contrib.auth import get_user_model
 from ninja import ModelSchema, Schema
 from ninja.orm import create_schema
-from pydantic import UUID4
+from pydantic import UUID4, BaseModel
 
+from account.schemas import AccountOut
 from commerce.models import Product, Merchant
 
-
-
+User = get_user_model()
 
 
 class UUIDSchema(Schema):
@@ -91,3 +92,22 @@ class ItemOut(UUIDSchema, ItemSchema):
     pass
 
 
+
+class AddressSchema(BaseModel):
+    work_address: bool = None
+    address1: str
+    address2: str = None
+    phone: str
+    class Config:
+        arbitrary_types_allowed = True
+
+class AddressCreate(AddressSchema):
+    city_id: UUID4
+
+class AddressOut(UUIDSchema, AddressSchema):
+    city: CitiesOut
+    user: AccountOut
+
+class OrderCheckout(Schema):
+    address_id: UUID4
+    note: str = None
