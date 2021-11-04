@@ -2,27 +2,29 @@ import random
 import string
 from typing import List
 
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from pydantic import UUID4
 
-from account.authorization import GlobalAuth
-from commerce.models import Product, Category, City, Vendor, Item, Order, OrderStatus
-from commerce.schemas import ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate
-from config.utils.schemas import MessageOut
+from account.authorization import GlobalAuth, get_tokens_for_user
+from account.models import User
+from commerce.schemas import AddressIn, AddressOut, MessageOut, ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, \
+    ItemSchema, ItemCreate, OrderIn, Checkout, Checkin
+
+from commerce.models import Product, Category, City, Vendor, Item, Order, OrderStatus, Address
 
 products_controller = Router(tags=['products'])
 address_controller = Router(tags=['addresses'])
 vendor_controller = Router(tags=['vendors'])
 order_controller = Router(tags=['orders'])
 
-User = get_user_model()
 
 @vendor_controller.get('', response=List[VendorOut])
 def list_vendors(request):
     return Vendor.objects.all()
+
 
 
 @products_controller.get('', response={
@@ -87,7 +89,7 @@ products = Product.objects.all()[:1000] (select * from product limit 1000)
 
 for p in products:
     print(p)
-    
+
 for every product, we retrieve (Merchant, Label, Category, Vendor) records
 
 Merchant.objects.get(id=p.merchant_id) (select * from merchant where id = 'p.merchant_id')
@@ -114,9 +116,38 @@ select * from merchant where id in (mids) * 4 for (label, category and vendor)
 """
 
 
-@address_controller.get('')
+# get all addresses
+@address_controller.get('alladdress', auth=GlobalAuth() , response=List[AddressOut])
 def list_addresses(request):
-    pass
+    return Address.objects.filter(user=request.auth['pk']).select_related('city').all()
+
+
+# get 1 address
+@address_controller.get('address/{id}', auth=GlobalAuth(), response={200: AddressOut, 404: MessageOut})
+def list_addresses(request, id: UUID4):
+    address = get_object_or_404(Address, id=id, user=request.auth['pk'])
+    if address:
+        return address
+    return 404, {"address not found"}
+
+
+# post new address
+@address_controller.post('addresspost', auth=GlobalAuth(), response={201: MessageOut, 400: MessageOut})
+def post_address(request, payload: AddressIn):
+    address = Address.objects.create(**payload.dict(), user = get_object_or_404(User, id=request.auth['pk']))
+    if address:
+        return 201, {"detail": "address have been created"}
+    return 400, {"something wrong happened"}
+
+
+# update address
+@address_controller.put('addressupdate/{id}', auth=GlobalAuth(), response={200: AddressOut, 404: MessageOut})
+def update_address(request, payload: AddressIn, id: UUID4):
+    address = Address.objects.filter(id=id, user=request.auth['pk']).update(**payload.dict())
+    if address:
+        address_show = Address.objects.get(id=id, user= request.auth['pk'])
+        return address_show
+    return 400, {"detail": "oops something wrong happened"}
 
 
 # @products_controller.get('categories', response=List[CategoryOut])
@@ -145,69 +176,79 @@ def retrieve_city(request, id: UUID4):
     return get_object_or_404(City, id=id)
 
 
-@address_controller.post('cities', response={
+@address_controller.post('cities', auth=GlobalAuth(), response={
     201: CitiesOut,
-    400: MessageOut
+    401: MessageOut
 })
 def create_city(request, city_in: CitySchema):
-    city = City(**city_in.dict())
-    city.save()
-    return 201, city
+    user = get_object_or_404(User, id=request.auth['pk'])
+    if user:
+        if user.is_staff == True or user.is_superuser == True:
+            city = City(**city_in.dict())
+            city.save()
+            return 201, city
+    return 401, {'detail': 'you cant create city'}
 
-
-@address_controller.put('cities/{id}', response={
+@address_controller.put('cities/{id}', auth=GlobalAuth(), response={
     200: CitiesOut,
-    400: MessageOut
+    401: MessageOut
 })
 def update_city(request, id: UUID4, city_in: CitySchema):
-    city = get_object_or_404(City, id=id)
-    city.name = city_in.name
-    city.save()
-    return 200, city
+    user = get_object_or_404(User, id=request.auth['pk'])
+    if user:
+        if user.is_staff == True or user.is_superuser == True:
+            city = get_object_or_404(City, id=id)
+            city.name = city_in.name
+            city.save()
+            return 200, city
+    return  401, {'detail': 'you cant update city'}
 
 
-@address_controller.delete('cities/{id}', response={
-    204: MessageOut
+@address_controller.delete('cities/{id}', auth= GlobalAuth(), response={
+    204: MessageOut,
+    401: MessageOut
 })
 def delete_city(request, id: UUID4):
-    city = get_object_or_404(City, id=id)
-    city.delete()
-    return 204, {'detail': ''}
+    user = get_object_or_404(User, id=request.auth['pk'])
+    if user:
+        if user.is_staff == True or user.is_superuser == True:
+            city = get_object_or_404(City, id=id)
+            city.delete()
+            return 204, {'detail': ''}
+    return 401, {'detail': 'you cant delete city'}
 
-
-@order_controller.get('cart', response={
+@order_controller.get('cart', auth=GlobalAuth(), response={
     200: List[ItemOut],
     404: MessageOut
 })
 def view_cart(request):
-    cart_items = Item.objects.filter(user=User.objects.first(), ordered=False)
-
+    cart_items = Item.objects.filter(user=request.auth['pk'], ordered=False)
     if cart_items:
         return cart_items
 
     return 404, {'detail': 'Your cart is empty, go shop like crazy!'}
 
 
-@order_controller.post('add-to-cart', response={
+@order_controller.post('add-to-cart',auth=GlobalAuth(), response={
     200: MessageOut,
     # 400: MessageOut
 })
 def add_update_cart(request, item_in: ItemCreate):
     try:
-        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.first())
-        item.item_qty += 1
+        item = Item.objects.get(product_id=item_in.product_id, user=request.auth['pk'], ordered=False)
+        item.item_qty += item_in.item_qty
         item.save()
     except Item.DoesNotExist:
-        Item.objects.create(**item_in.dict(), user=User.objects.first())
+        Item.objects.create(**item_in.dict(), user=get_object_or_404(User, id=request.auth['pk']))
 
     return 200, {'detail': 'Added to cart successfully'}
 
 
-@order_controller.post('item/{id}/reduce-quantity', response={
+@order_controller.post('item/{id}/reduce-quantity',auth=GlobalAuth(), response={
     200: MessageOut,
 })
 def reduce_item_quantity(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=request.auth['pk'])
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
@@ -217,11 +258,19 @@ def reduce_item_quantity(request, id: UUID4):
     return 200, {'detail': 'Item quantity reduced successfully!'}
 
 
-@order_controller.delete('item/{id}', response={
+@order_controller.post('item/{id}/increase-quantity', auth=GlobalAuth(), response={200: MessageOut, 400: MessageOut})
+def increase_item_quantity(request, id: UUID4):
+    item = get_object_or_404(Item, id=id, user=request.auth['pk'])
+    item.item_qty += 1
+    item.save()
+    return 200, {"detail": "item quantity increased successfully"}
+
+
+@order_controller.delete('item/{id}', auth=GlobalAuth(), response={
     204: MessageOut
 })
 def delete_item(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=request.auth['pk'])
     item.delete()
 
     return 204, {'detail': 'Item deleted!'}
@@ -231,27 +280,47 @@ def generate_ref_code():
     return ''.join(random.sample(string.ascii_letters + string.digits, 6))
 
 
-@order_controller.post('create-order', auth=GlobalAuth(), response=MessageOut)
+@order_controller.post('create-order', auth=GlobalAuth(), response={201: MessageOut, 404: MessageOut})
 def create_order(request):
-    '''
-    * add items and mark (ordered) field as True
-    * add ref_number
-    * add NEW status
-    * calculate the total
-    '''
+    check_unordered = Item.objects.filter(user=request.auth['pk']).filter(ordered=False)
+    if not check_unordered:
+        return 404, {'detail': 'your cart is empty you cant create orders'}
+    try:
+        order_qs = Order.objects.get(user = request.auth['pk'], ordered=False)
+    except Order.DoesNotExist:
+        user = get_object_or_404(User, pk=request.auth['pk'])
+        order_qs = Order.objects.create(user=user, status=OrderStatus.objects.get(is_default=True),
+                                        ref_code=generate_ref_code(), ordered=False, )
 
-    order_qs = Order.objects.create(
-        user=User.objects.first(),
-        status=OrderStatus.objects.get(is_default=True),
-        ref_code=generate_ref_code(),
-        ordered=False,
-    )
-
-    user_items = Item.objects.filter(user=User.objects.first()).filter(ordered=False)
-
-    order_qs.items.add(*user_items)
+    items_checked = Item.objects.filter(ordered=True, user=request.auth['pk'], order__ordered=False)
+    print('hi2')
+    if items_checked:
+        for i in items_checked:
+            try:
+                items_unchecked = Item.objects.get(ordered=False, product__id=i.product.id,user =request.auth['pk'])
+                print('hi3')
+                if items_unchecked:
+                    i.item_qty += items_unchecked.item_qty
+                    i.save()
+                    items_unchecked.delete()
+            except Item.DoesNotExist:
+                continue
+    user_items = Item.objects.filter(user=request.auth['pk']).filter(ordered=False)
+    if user_items:
+        order_qs.items.add(*user_items)
+        user_items.update(ordered=True)
+        user_items.delete()
     order_qs.total = order_qs.order_total
-    user_items.update(ordered=True)
     order_qs.save()
 
-    return {'detail': 'order created successfully'}
+    return 201, {'detail': 'order created successfully'}
+
+
+@order_controller.post('checkout', auth=GlobalAuth(), response={201: MessageOut, 404: MessageOut})
+def checkout_order(request, payload: Checkin):
+    status = OrderStatus.objects.get(title="COMPLETED")
+    order_qs = Order.objects.filter(user=request.auth['pk'], status__is_default=True, ordered=False).update(
+        **payload.dict(), ordered=True, status=status)
+    if order_qs:
+        return 201, {"detail": "checkout process finished successfully"}
+    return 404, {"detail": "create order first"}
