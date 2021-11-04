@@ -4,9 +4,16 @@ from PIL import Image
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from config.utils.models import Entity
-
 User = get_user_model()
+
+
+class Entity(models.Model):
+    class Meta:
+        abstract = True
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created = models.DateTimeField(editable=False, auto_now_add=True)
+    updated = models.DateTimeField(editable=False, auto_now=True)
 
 
 class Product(Entity):
@@ -75,7 +82,7 @@ class Item(Entity):
     ordered = models.BooleanField('ordered', default=False)
 
     def __str__(self):
-        return self.product.name
+        return f''
 
 
 class OrderStatus(Entity):
@@ -98,6 +105,10 @@ class OrderStatus(Entity):
     ])
     is_default = models.BooleanField('is default')
 
+
+    class Meta:
+        verbose_name = 'OrderStatus'
+        verbose_name_plural = 'order statuses'
     def __str__(self):
         return self.title
 
@@ -206,5 +217,8 @@ class Address(Entity):
     city = models.ForeignKey(City, related_name='addresses', on_delete=models.CASCADE)
     phone = models.CharField('phone', max_length=255)
 
+    class Meta:
+        verbose_name = 'Address'
+        verbose_name_plural = 'Addresses'
     def __str__(self):
         return f'{self.user.first_name} - {self.address1} - {self.address2} - {self.phone}'
