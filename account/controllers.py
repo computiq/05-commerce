@@ -63,8 +63,6 @@ def signin(request, signin_in: SigninSchema):
 @account_controller.get('', auth=GlobalAuth(), response={200: AccountOut, 401: MessageOut})
 @check_pk
 def me(request):
-    # if 'pk' not in request.auth:
-    #     return 401, {'detail': "Unauthorized"}
     return User.objects.get(id=request.auth['pk'])
 
 
@@ -75,7 +73,7 @@ def me(request):
 @check_pk
 def update_account(request, update_in: AccountUpdate):
     User.objects.filter(id=request.auth['pk']).update(**update_in.dict())
-    return get_object_or_404(User, id=request.auth['pk'])
+    return User.objects.get(id=request.auth['pk'])
 
 
 @account_controller.post('change-password', auth=GlobalAuth(), response={
