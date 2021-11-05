@@ -91,3 +91,25 @@ class ItemOut(UUIDSchema, ItemSchema):
     pass
 
 
+class OrderOut(UUIDSchema) :
+    total  : int = None
+    note : str = None
+    ordered : bool
+    items : List[ItemSchema]
+    ref_code : str = None
+
+
+class AddressOut(UUIDSchema):
+    id : UUID4
+    work_address : bool = None
+    address1 : str 
+    address2 : str = None
+    phone : str 
+
+
+class AddressIn(Schema):
+    work_address : bool
+    address1 : str
+    address2 : str  
+    phone : str
+
