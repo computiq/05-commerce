@@ -19,7 +19,7 @@ from django.urls import path
 from ninja import NinjaAPI
 
 from account.controllers import account_controller
-from commerce.controllers import products_controller, address_controller, vendor_controller, order_controller
+from commerce.controllers import products_controller, address_controller, vendor_controller, order_controller,task4_controller
 from config import settings
 
 api = NinjaAPI()
@@ -29,6 +29,7 @@ api.add_router('addresses', address_controller)
 api.add_router('vendors', vendor_controller)
 api.add_router('orders', order_controller)
 api.add_router('auth', account_controller)
+api.add_router('task4', task4_controller)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

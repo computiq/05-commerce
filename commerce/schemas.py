@@ -1,10 +1,11 @@
 from typing import List
-
 from ninja import ModelSchema, Schema
-from ninja.orm import create_schema
 from pydantic import UUID4
-
+from django.contrib.auth import get_user_model
+from pydantic.networks import EmailStr
 from commerce.models import Product, Merchant
+User = get_user_model()
+
 
 
 
@@ -89,5 +90,23 @@ class ItemCreate(Schema):
 
 class ItemOut(UUIDSchema, ItemSchema):
     pass
+class Orderstatusschema(Schema):
+    title:      str
+    is_default: bool
 
+class Addressout(Schema):
+    address1: str
+    phone: str
+    city_id: UUID4
+    work_address: bool
+    address2: str = None
+
+class Addresslist(Addressout, UUIDSchema):
+    user_id : UUID4
+class OrderStatus(Schema):
+    title: str
+class OrderCreate(Schema):
+    items: List[UUID4]
+    address: UUID4
+    note: str 
 

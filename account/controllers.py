@@ -47,7 +47,7 @@ def signin(request, signin_in: SigninSchema):
     user = authenticate(email=signin_in.email, password=signin_in.password)
 
     if not user:
-        return 404, {'detail': 'User does not exist'}
+        return 404, {'detail': 'User or Password does not exist'}
 
     token = get_tokens_for_user(user)
 
@@ -77,14 +77,15 @@ def update_account(request, update_in: AccountUpdate):
 })
 def change_password(request, password_update_in: ChangePasswordSchema):
     # user = authenticate(get_object_or_404(User, id=request.auth['pk']).email, password_update_in.old_password)
-    if password_update_in.new_password1 != password_update_in.new_password2:
-        return 400, {'detail': 'passwords do not match'}
     user = get_object_or_404(User, id=request.auth['pk'])
     is_it_him = user.check_password(password_update_in.old_password)
 
     if not is_it_him:
         return 400, {'detail': 'Dude, make sure you are him!'}
 
+    if password_update_in.new_password1 != password_update_in.new_password2:
+        return 400, {'detail': 'passwords do not match'}
+    
     user.set_password(password_update_in.new_password1)
     user.save()
     return {'detail': 'password updated successfully'}
