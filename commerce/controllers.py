@@ -180,7 +180,7 @@ def delete_city(request, id: UUID4):
     404: MessageOut
 })
 def view_cart(request):
-    cart_items = Item.objects.filter(user=User.objects.first(), ordered=False)
+    cart_items = Item.objects.filter(id=request.auth['pk'], ordered=False)
 
     if cart_items:
         return cart_items
@@ -193,12 +193,13 @@ def view_cart(request):
     # 400: MessageOut
 })
 def add_update_cart(request, item_in: ItemCreate):
+
     try:
-        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.first())
+        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.get(id=request.auth['pk']), ordered=False)
         item.item_qty += 1
         item.save()
     except Item.DoesNotExist:
-        Item.objects.create(**item_in.dict(), user=User.objects.first())
+        Item.objects.create(**item_in.dict(),  user=User.objects.get(id=request.auth['pk']))
 
     return 200, {'detail': 'Added to cart successfully'}
 
@@ -207,7 +208,7 @@ def add_update_cart(request, item_in: ItemCreate):
     200: MessageOut,
 })
 def reduce_item_quantity(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id,  user=User.objects.get(id=request.auth['pk']),ordered=False)
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
@@ -221,7 +222,7 @@ def reduce_item_quantity(request, id: UUID4):
     204: MessageOut
 })
 def delete_item(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id,  user=User.objects.get(id=request.auth['pk']), ordered=False)
     item.delete()
 
     return 204, {'detail': 'Item deleted!'}
@@ -229,6 +230,22 @@ def delete_item(request, id: UUID4):
 
 def generate_ref_code():
     return ''.join(random.sample(string.ascii_letters + string.digits, 6))
+
+
+
+
+@order_controller.post('item/{id}/increase-quantity', response={
+    200: MessageOut,
+    401: MessageOut
+})
+
+def increase_item_quantity(request, id: UUID4):
+    
+    item = get_object_or_404(Item, id=id, user=User.objects.get(id=request.auth['pk']), ordered=False)
+    item.item_qty += 1
+    item.save()
+    return 200, {'detail': 'Item quantity increased successfully!'}
+
 
 
 @order_controller.post('create-order', auth=GlobalAuth(), response=MessageOut)
@@ -241,7 +258,7 @@ def create_order(request):
     '''
 
     order_qs = Order.objects.create(
-        user=User.objects.first(),
+        user= User.objects.prefetch_related('items', 'orders').get(id=request.auth['pk']),
         status=OrderStatus.objects.get(is_default=True),
         ref_code=generate_ref_code(),
         ordered=False,
