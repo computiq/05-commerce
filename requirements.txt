@@ -6,3 +6,5 @@ pydantic==1.8.2
 pytz==2021.3
 sqlparse==0.4.2
 typing-extensions==3.10.0.2
+
+jose~=1.0.0
