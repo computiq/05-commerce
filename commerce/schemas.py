@@ -1,8 +1,10 @@
+from account.authorization import User
 from typing import List
 
 from ninja import ModelSchema, Schema
 from ninja.orm import create_schema
 from pydantic import UUID4
+from account.schemas import AccountOut
 
 from commerce.models import Product, Merchant
 
@@ -76,7 +78,7 @@ class CitiesOut(CitySchema, UUIDSchema):
 
 
 class ItemSchema(Schema):
-    # user:
+    user:AccountOut
     product: ProductOut
     item_qty: int
     ordered: bool
@@ -86,8 +88,19 @@ class ItemCreate(Schema):
     product_id: UUID4
     item_qty: int
 
+   
 
 class ItemOut(UUIDSchema, ItemSchema):
     pass
 
 
+
+class AddressSchema(Schema):
+    work_address:str
+    address1:str
+    address2:str
+    phone:str
+    city_id:UUID4
+     
+class addressOut(AddressSchema):
+     pass
