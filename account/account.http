@@ -1,7 +1,15 @@
-GET localhost:8000/api/auth
+POST localhost:8000/api/auth/signup
 Content-Type: application/json
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+
+{
+  "first_name": "Hassan",
+  "last_name": "Ammar",
+  "email": "user@example.com",
+  "password1": "123456789",
+  "password2": "123456789"
+}
+
 
 ###
 POST localhost:8000/api/auth/signin
@@ -10,28 +18,30 @@ Accept: application/json
 
 {
   "email": "user@example.com",
-  "password": "!!123123!!"
+  "password": "123456789"
 }
+
 
 ###
 GET localhost:8000/api/auth
 Content-Type: application/json
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjE1MWI0NDAxLTNhMWItNGQwOS04N2YxLTViNzc2ZmVkMTIwMiJ9.hrnl9RQ4o8ryx29XNr_iEFLWEFS7F_FLZGCVD3ThyHA
+
 
 ###
 PUT localhost:8000/api/auth
 Content-Type: application/json
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjE1MWI0NDAxLTNhMWItNGQwOS04N2YxLTViNzc2ZmVkMTIwMiJ9.hrnl9RQ4o8ryx29XNr_iEFLWEFS7F_FLZGCVD3ThyHA
 
 {
-  "first_name": "Layth",
-  "last_name": "Zahid",
-  "phone_number": "077",
-  "address1": "Anything",
+  "first_name": "Hassan1",
+  "last_name": "Ammar1",
+  "phone_number": "07745678923",
+  "address1": "Anything Haha",
   "address2": "",
-  "company_name": "",
+  "company_name": "UOITC",
   "company_website": ""
 }
 
@@ -43,7 +53,91 @@ Accept: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
 
 {
-  "old_password": "string!!",
+  "old_password": "123456789",
   "new_password1": "!!123123!!",
   "new_password2": "!!123123!!"
 }
+
+###
+POST localhost:8000/api/orders/add-to-cart
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjE1MWI0NDAxLTNhMWItNGQwOS04N2YxLTViNzc2ZmVkMTIwMiJ9.hrnl9RQ4o8ryx29XNr_iEFLWEFS7F_FLZGCVD3ThyHA
+
+{
+  "product_id": "cea150dc-2097-47f5-9d16-e47b57a5cc0e",
+  "item_qty": 1
+}
+
+
+###
+POST localhost:8000/api/orders/add-to-cart
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjE1MWI0NDAxLTNhMWItNGQwOS04N2YxLTViNzc2ZmVkMTIwMiJ9.hrnl9RQ4o8ryx29XNr_iEFLWEFS7F_FLZGCVD3ThyHA
+
+{
+  "product_id": "a301be65-4b40-4ddf-ba84-881afc59a637",
+  "item_qty": 1
+}
+
+
+###
+GET localhost:8000/api/orders/cart
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjE1MWI0NDAxLTNhMWItNGQwOS04N2YxLTViNzc2ZmVkMTIwMiJ9.hrnl9RQ4o8ryx29XNr_iEFLWEFS7F_FLZGCVD3ThyHA
+
+
+###
+POST localhost:8000/api/orders/create-order
+Content-Type: application/json
+Accept: application/json
+Authorization:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjE1MWI0NDAxLTNhMWItNGQwOS04N2YxLTViNzc2ZmVkMTIwMiJ9.hrnl9RQ4o8ryx29XNr_iEFLWEFS7F_FLZGCVD3ThyHA
+
+
+###
+GET localhost:8000/api/orders/view-order
+Content-Type: application/json
+Accept: application/json
+Authorization:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjE1MWI0NDAxLTNhMWItNGQwOS04N2YxLTViNzc2ZmVkMTIwMiJ9.hrnl9RQ4o8ryx29XNr_iEFLWEFS7F_FLZGCVD3ThyHA
+
+
+###
+POST localhost:8000/api/addresses/add-adress
+Content-Type: application/json
+Accept: application/json
+Authorization:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjE1MWI0NDAxLTNhMWItNGQwOS04N2YxLTViNzc2ZmVkMTIwMiJ9.hrnl9RQ4o8ryx29XNr_iEFLWEFS7F_FLZGCVD3ThyHA
+
+
+{
+  "work_address": true,
+  "address1": "aiskan2",
+  "address2": "12string!@",
+  "city_id": "437153e2-4aa7-4fcf-88df-312bdd70baee",
+  "phone": "03812342"
+}
+
+###
+GET localhost:8000/api/addresses
+Content-Type: application/json
+Accept: application/json
+Authorization:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjE1MWI0NDAxLTNhMWItNGQwOS04N2YxLTViNzc2ZmVkMTIwMiJ9.hrnl9RQ4o8ryx29XNr_iEFLWEFS7F_FLZGCVD3ThyHA
+
+###
+PUT localhost:8000/api/checkout/checkout
+Content-Type: application/json
+Accept: application/json
+Authorization:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjE1MWI0NDAxLTNhMWItNGQwOS04N2YxLTViNzc2ZmVkMTIwMiJ9.hrnl9RQ4o8ryx29XNr_iEFLWEFS7F_FLZGCVD3ThyHA
+
+
+{
+  "address_id": "3f758a13-1565-42aa-96a3-441fe9ca50ac",
+  "note": "This is it I'm acully Done! "
+}
+
+###
+GET localhost:8000/api/checkout/view-processing-order
+Content-Type: application/json
+Accept: application/json
+Authorization:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjE1MWI0NDAxLTNhMWItNGQwOS04N2YxLTViNzc2ZmVkMTIwMiJ9.hrnl9RQ4o8ryx29XNr_iEFLWEFS7F_FLZGCVD3ThyHA

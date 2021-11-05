@@ -91,3 +91,37 @@ class ItemOut(UUIDSchema, ItemSchema):
     pass
 
 
+class OrderStatusShcema(Schema):
+    title: str
+    is_default: bool
+
+
+class CreateAdress(Schema):
+    work_address: bool
+    address1: str
+    address2: str
+    city_id: UUID4
+    phone: str
+
+
+class AdressOut(CreateAdress, UUIDSchema):
+    pass
+
+
+class OrderShema(Schema):
+    address_id: UUID4 = None
+    note: str = None
+
+
+class OrderOut(OrderShema):
+    items: List[ItemOut]
+    status_id: UUID4 = None
+    total: float
+    ref_code: str
+    ordered: bool
+
+
+class OrderShemaCreat(OrderShema):
+    address_id: UUID4
+
+
