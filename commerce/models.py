@@ -1,10 +1,9 @@
 import uuid
-
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.db import models
-
 from config.utils.models import Entity
+
 
 User = get_user_model()
 

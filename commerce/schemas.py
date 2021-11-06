@@ -7,14 +7,12 @@ from pydantic import UUID4
 from commerce.models import Product, Merchant
 
 
-
-
-
 class UUIDSchema(Schema):
     id: UUID4
 
 
 # ProductSchemaOut = create_schema(Product, depth=2)
+
 
 class VendorOut(UUIDSchema):
     name: str
@@ -81,10 +79,11 @@ class AddressSchema(Schema):
     address2: str = None
     phone: str
 
+
 class AddressesCreate(AddressSchema):
     user_id: str
     city_id: UUID4
-    
+
 
 class AddressesUpdate(AddressSchema):
     city_id: UUID4
