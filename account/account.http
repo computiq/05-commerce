@@ -1,49 +1,49 @@
-GET localhost:8000/api/auth
+GET http://localhost:8000/api/auth
 Content-Type: application/json
 Accept: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
 
 ###
-POST localhost:8000/api/auth/signin
+POST http://localhost:8000/api/auth/signin
 Content-Type: application/json
 Accept: application/json
 
 {
   "email": "user@example.com",
-  "password": "!!123123!!"
+  "password": "stringgg"
 }
 
 ###
-GET localhost:8000/api/auth
+GET http://localhost:8000/api/auth
 Content-Type: application/json
 Accept: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
 
 ###
-PUT localhost:8000/api/auth
+PUT http://localhost:8000/api/auth
 Content-Type: application/json
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6Ijg2Y2JmZTdhLTg1ZDQtNDFkMy1iMjhiLTVjMDI1ZDJiYzQzZCJ9.8JbucnCUaIGyREOHiN1T6HtBBGOkduKzGfP384vyX18
 
 {
-  "first_name": "Layth",
-  "last_name": "Zahid",
+  "first_name": "Abbas",
+  "last_name": "Salah",
   "phone_number": "077",
-  "address1": "Anything",
-  "address2": "",
-  "company_name": "",
-  "company_website": ""
+  "address1": "Anything address 1",
+  "address2": "Anything address 2",
+  "company_name": "Anything",
+  "company_website": "anything.com"
 }
 
 
 ###
-POST localhost:8000/api/auth/change-password
+POST http://localhost:8000/api/auth/change-password
 Content-Type: application/json
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6Ijg2Y2JmZTdhLTg1ZDQtNDFkMy1iMjhiLTVjMDI1ZDJiYzQzZCJ9.8JbucnCUaIGyREOHiN1T6HtBBGOkduKzGfP384vyX18
 
 {
-  "old_password": "string!!",
-  "new_password1": "!!123123!!",
-  "new_password2": "!!123123!!"
+  "old_password": "string12",
+  "new_password1": "stringgg",
+  "new_password2": "stringgg"
 }

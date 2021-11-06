@@ -7,7 +7,8 @@ from pydantic import UUID4
 from commerce.models import Product, Merchant
 
 
-
+class MessageOut(Schema):
+    detail: str
 
 
 class UUIDSchema(Schema):
@@ -91,3 +92,16 @@ class ItemOut(UUIDSchema, ItemSchema):
     pass
 
 
+class AddressPut(Schema):
+        city: UUID4
+        address1: str
+        address2: str
+        work_address: bool
+        phone: str
+class AddressOut(AddressPut):
+    id: UUID4
+    city: CitySchema
+    
+class CheckOut(Schema):
+    note: str = None
+    address: UUID4
