@@ -279,10 +279,18 @@ def delete_city(request, id: UUID4):
 
 @order_controller.get('cart', auth=GlobalAuth(), response={
     200: List[ItemOut],
-    404: MessageOut
+    404: MessageOut,
+    401: MessageOut
 })
 def view_cart(request):
-    cart_items = Item.objects.filter(user=get_object_or_404(User, request.auth['pk']), ordered=False)
+    # checks if the token is valid or exists
+    if 'pk' not in request.auth:
+        return 401, {'detail': 'unauthorized'}
+    # gets the user from pk
+    user = User.objects.filter(id=request.auth['pk'])[0]
+
+    # gets the cart for the given user
+    cart_items = Item.objects.filter(user=user, ordered=False)
 
     if cart_items:
         return cart_items
