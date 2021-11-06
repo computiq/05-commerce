@@ -175,12 +175,12 @@ def delete_city(request, id: UUID4):
     return 204, {'detail': ''}
 
 
-@order_controller.get('cart', response={
+@order_controller.get('cart',auth=GlobalAuth(), response={
     200: List[ItemOut],
     404: MessageOut
 })
 def view_cart(request):
-    cart_items = Item.objects.filter(user=User.objects.first(), ordered=False)
+    cart_items = Item.objects.filter(user=get_object_or_404(User, id=request.auth['pk']), ordered=False)
 
     if cart_items:
         return cart_items
@@ -188,26 +188,26 @@ def view_cart(request):
     return 404, {'detail': 'Your cart is empty, go shop like crazy!'}
 
 
-@order_controller.post('add-to-cart', response={
+@order_controller.post('add-to-cart',auth=GlobalAuth(), response={
     200: MessageOut,
     # 400: MessageOut
 })
 def add_update_cart(request, item_in: ItemCreate):
     try:
-        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.first())
+        item = Item.objects.get(product_id=item_in.product_id, user=get_object_or_404(User, id=request.auth['pk']))
         item.item_qty += 1
         item.save()
     except Item.DoesNotExist:
-        Item.objects.create(**item_in.dict(), user=User.objects.first())
+        Item.objects.create(**item_in.dict(), user=get_object_or_404(User, id=request.auth['pk']))
 
     return 200, {'detail': 'Added to cart successfully'}
 
 
-@order_controller.post('item/{id}/reduce-quantity', response={
+@order_controller.post('item/{id}/reduce-quantity',auth=GlobalAuth(), response={
     200: MessageOut,
 })
 def reduce_item_quantity(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=get_object_or_404(User, id=request.auth['pk']))
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
@@ -217,11 +217,11 @@ def reduce_item_quantity(request, id: UUID4):
     return 200, {'detail': 'Item quantity reduced successfully!'}
 
 
-@order_controller.delete('item/{id}', response={
+@order_controller.delete('item/{id}',auth=GlobalAuth(), response={
     204: MessageOut
 })
 def delete_item(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=get_object_or_404(User, id=request.auth['pk']))
     item.delete()
 
     return 204, {'detail': 'Item deleted!'}
@@ -241,13 +241,13 @@ def create_order(request):
     '''
 
     order_qs = Order.objects.create(
-        user=User.objects.first(),
+        user=get_object_or_404(User, id=request.auth['pk']),
         status=OrderStatus.objects.get(is_default=True),
         ref_code=generate_ref_code(),
         ordered=False,
     )
 
-    user_items = Item.objects.filter(user=User.objects.first()).filter(ordered=False)
+    user_items = Item.objects.filter(user=get_object_or_404(User, id=request.auth['pk'])).filter(ordered=False)
 
     order_qs.items.add(*user_items)
     order_qs.total = order_qs.order_total
