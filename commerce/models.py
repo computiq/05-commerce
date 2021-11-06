@@ -98,6 +98,10 @@ class OrderStatus(Entity):
     ])
     is_default = models.BooleanField('is default')
 
+    class Meta:
+        verbose_name = 'order status'
+        verbose_name_plural = 'order statuses'
+
     def __str__(self):
         return self.title
 
@@ -205,6 +209,10 @@ class Address(Entity):
     address2 = models.CharField('address2', null=True, blank=True, max_length=255)
     city = models.ForeignKey(City, related_name='addresses', on_delete=models.CASCADE)
     phone = models.CharField('phone', max_length=255)
+
+    class Meta:
+        verbose_name = 'address'
+        verbose_name_plural = 'addresses'
 
     def __str__(self):
         return f'{self.user.first_name} - {self.address1} - {self.address2} - {self.phone}'
