@@ -300,27 +300,60 @@ def delete_item(request, id: UUID4):
     return 204, {'detail': 'Item deleted!'}
 
 
-def generate_ref_code():
-    return ''.join(random.sample(string.ascii_letters + string.digits, 6))
+@order_controller.get('', response={
+    200: List[OrderSchema],
+    404: MessageOut
+})
+def list_orders(request, ordered: bool = False):
+    order_set = Order.objects.filter(user=User.objects.first())
+    if not ordered:
+        order_set = order_set.filter(ordered=ordered)
+    if not order_set:
+        return 404, {'detail': 'no orders found'}
+    return order_set
 
 
-@order_controller.post('create-order', auth=GlobalAuth(), response=MessageOut)
-def create_order(request):
-    '''
-    * add items and mark (ordered) field as True
-    * add ref_number
-    * add NEW status
-    * calculate the total
-    '''
+def gen_code(size=6):
+    chars = string.ascii_letters + string.digits
+    code = ''.join(random.choice(chars) for _ in range(size))
+    return code
 
-    order_qs = Order.objects.create(
-        user=User.objects.first(),
-        status=OrderStatus.objects.get(is_default=True),
-        ref_code=generate_ref_code(),
-        ordered=False,
-    )
 
-    user_items = Item.objects.filter(user=User.objects.first()).filter(ordered=False)
+@order_controller.post('create-order', response={
+    200: MessageOut
+})
+def create_order(request, item_in: OrderCreate):
+    user = User.objects.first()
+    items = Item.objects.filter(id__in=item_in.items)
+    current_order = Order.objects.filter(user=user, ordered=False)
+
+    if current_order.exists():
+        new_order = current_order.first()
+        for i in items:
+            i.ordered = True
+            i.save()
+        new_order.items.add(*items)
+        new_order.total = new_order.order_total
+        new_order.save()
+        return 200, {'detail': 'updated the order successfully.'}
+    else:
+        for i in items:
+            i.ordered = True
+            i.save()
+        status = OrderStatus.objects.get(title="NEW")
+        new_order = Order.objects.create(
+            user=user,
+            status=status,
+            address=item_in.address,
+            ordered=False,
+            ref_code=gen_code(),
+            note=item_in.note
+        )
+        new_order.items.add(*items)
+        new_order.total = new_order.order_total
+        new_order.save()
+        return 200, {'detail': 'created the order successfully.'}
+
 
     order_qs.items.add(*user_items)
     order_qs.total = order_qs.order_total
