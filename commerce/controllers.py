@@ -293,12 +293,10 @@ def create_order(request):
                                         ref_code=generate_ref_code(), ordered=False, )
 
     items_checked = Item.objects.filter(ordered=True, user=request.auth['pk'], order__ordered=False)
-    print('hi2')
     if items_checked:
         for i in items_checked:
             try:
                 items_unchecked = Item.objects.get(ordered=False, product__id=i.product.id,user =request.auth['pk'])
-                print('hi3')
                 if items_unchecked:
                     i.item_qty += items_unchecked.item_qty
                     i.save()
