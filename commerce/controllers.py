@@ -9,8 +9,11 @@ from ninja import Router
 from pydantic import UUID4
 
 from account.authorization import GlobalAuth
-from commerce.models import Product, Category, City, Vendor, Item, Order, OrderStatus
-from commerce.schemas import ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate
+from commerce.models import Product, Category, City, Vendor, Item, Address\
+    ,Order, OrderStatus
+from commerce.schemas import MessageOut, ProductOut, CitiesOut, CitySchema \
+    , VendorOut, ItemOut, ItemSchema, ItemCreate, CategoryOut, AddressSchema\
+    , AddressesOut , AddressesCreate, AddressesUpdate, OrderSchema, OrderCreate
 from config.utils.schemas import MessageOut
 
 products_controller = Router(tags=['products'])
@@ -22,7 +25,12 @@ User = get_user_model()
 
 @vendor_controller.get('', response=List[VendorOut])
 def list_vendors(request):
-    return Vendor.objects.all()
+    vendor_set = Vendor.objects.all()
+
+    if vendor_set:
+        return vendor_set
+
+    return 400, {'detail': 'No categories found'}
 
 
 @products_controller.get('', response={
@@ -36,26 +44,26 @@ def list_products(
         price_to: int = None,
         vendor=None,
 ):
-    products_qs = Product.objects.filter(is_active=True).select_related('merchant', 'vendor', 'category', 'label')
+    products_set = Product.objects.filter(is_active=True).select_related('merchant', 'vendor', 'category', 'label')
 
-    if not products_qs:
+    if not products_set:
         return 404, {'detail': 'No products found'}
 
     if q:
-        products_qs = products_qs.filter(
+        products_set = products_set.filter(
             Q(name__icontains=q) | Q(description__icontains=q)
         )
 
     if price_from:
-        products_qs = products_qs.filter(discounted_price__gte=price_from)
+        products_set = products_set.filter(discounted_price__gte=price_from)
 
     if price_to:
-        products_qs = products_qs.filter(discounted_price__lte=price_to)
+        products_set = products_set.filter(discounted_price__lte=price_to)
 
     if vendor:
-        products_qs = products_qs.filter(vendor_id=vendor)
+        products_set = products_set.filter(vendor_id=vendor)
 
-    return products_qs
+    return products_set
 
 
 """
@@ -114,14 +122,17 @@ select * from merchant where id in (mids) * 4 for (label, category and vendor)
 """
 
 
-@address_controller.get('')
-def list_addresses(request):
-    pass
+@products_controller.get('categories', response={
+    200: List[CategoryOut],
+    404: MessageOut
+})
+def list_categories(request):
+    category_set = Category.objects.all()
 
+    if category_set:
+        return category_set
 
-# @products_controller.get('categories', response=List[CategoryOut])
-# def list_categories(request):
-#     return Category.objects.all()
+    return 404, {'detail': 'No categories found'}
 
 
 @address_controller.get('cities', response={
@@ -129,10 +140,10 @@ def list_addresses(request):
     404: MessageOut
 })
 def list_cities(request):
-    cities_qs = City.objects.all()
+    city_set = City.objects.all()
 
-    if cities_qs:
-        return cities_qs
+    if city_set:
+        return city_set
 
     return 404, {'detail': 'No cities found'}
 
@@ -190,7 +201,7 @@ def view_cart(request):
 
 @order_controller.post('add-to-cart', response={
     200: MessageOut,
-    # 400: MessageOut
+    400: MessageOut
 })
 def add_update_cart(request, item_in: ItemCreate):
     try:
@@ -206,15 +217,25 @@ def add_update_cart(request, item_in: ItemCreate):
 @order_controller.post('item/{id}/reduce-quantity', response={
     200: MessageOut,
 })
-def reduce_item_quantity(request, id: UUID4):
+def reduce_item_quantity(request, id: UUID4, qty: int = 1):
     item = get_object_or_404(Item, id=id, user=User.objects.first())
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
-    item.item_qty -= 1
+    item.item_qty -= qty
     item.save()
 
     return 200, {'detail': 'Item quantity reduced successfully!'}
+
+
+@order_controller.post('item/{id}/increase-quantity', response={
+    200: MessageOut,
+})
+def increase_item_quantity(request, id: UUID4, qty: int = 1):
+    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item.item_qty += qty
+    item.save()
+    return 200, {'detail': 'Item quantity increased successfully!'}
 
 
 @order_controller.delete('item/{id}', response={
