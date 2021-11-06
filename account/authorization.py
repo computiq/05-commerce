@@ -9,6 +9,7 @@ User = get_user_model()
 
 TIME_DELTA = timedelta(days=120)
 
+
 class GlobalAuth(HttpBearer):
     def authenticate(self, request, token):
         try:
@@ -24,4 +25,3 @@ def get_tokens_for_user(user):
     return {
         'access': str(token),
     }
-

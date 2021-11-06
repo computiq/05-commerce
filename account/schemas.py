@@ -22,12 +22,15 @@ class AccountOut(Schema):
     company_name: str = None
     company_website: str = None
 
+
 class TokenOut(Schema):
     access: str
+
 
 class AuthOut(Schema):
     token: TokenOut
     account: AccountOut
+
 
 class SigninSchema(Schema):
     email: EmailStr
@@ -48,3 +51,5 @@ class ChangePasswordSchema(Schema):
     old_password: str
     new_password1: str
     new_password2: str
+
+

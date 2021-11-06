@@ -9,7 +9,6 @@ from commerce.models import Product, Merchant
 
 
 
-
 class UUIDSchema(Schema):
     id: UUID4
 
@@ -91,3 +90,21 @@ class ItemOut(UUIDSchema, ItemSchema):
     pass
 
 
+class AddressSchema(Schema):
+    work_address: bool = False
+    address1: str
+    address2: str = None
+    phone: str
+
+
+class AddressOut(AddressSchema, UUIDSchema):
+    city: CitySchema
+
+
+class AddressCreate(AddressSchema):
+    city_id: UUID4
+
+
+class CheckoutSchema(Schema):
+    address: UUID4
+    note: str = None
