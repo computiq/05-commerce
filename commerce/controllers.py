@@ -355,9 +355,19 @@ def create_order(request, item_in: OrderCreate):
         return 200, {'detail': 'created the order successfully.'}
 
 
-    order_qs.items.add(*user_items)
-    order_qs.total = order_qs.order_total
-    user_items.update(ordered=True)
-    order_qs.save()
+@order_controller.post('checkout', response={
+    200: MessageOut,
+    404: MessageOut
+})
+def checkout_order(request):
+    try:
+        order_set = Order.objects.get(ordered=False, user=User.objects.first())
+    except Order.DoesNotExist:
+        return 404, {'detail': 'No order exists'}
 
-    return {'detail': 'order created successfully'}
+    for item in order_set.items.all():
+        item.product.qty -= item.item_qty
+        item.product.save()
+    order_set.ordered = True
+    order_set.save()
+    return 200, {'detail': 'checkout successful'}
