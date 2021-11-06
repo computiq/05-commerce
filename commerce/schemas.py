@@ -42,10 +42,10 @@ CategoryOut.update_forward_refs()
 
 
 class ProductOut(ModelSchema):
-    vendor: VendorOut
+    category: CategoryOut
     label: LabelOut
     merchant: MerchantOut
-    category: CategoryOut
+    vendor: VendorOut
 
     class Config:
         model = Product
@@ -55,11 +55,10 @@ class ProductOut(ModelSchema):
                         'qty',
                         'price',
                         'discounted_price',
-                        'vendor',
                         'category',
                         'label',
                         'merchant',
-
+                        'vendor',
                         ]
 
 
@@ -75,11 +74,31 @@ class CitiesOut(CitySchema, UUIDSchema):
     pass
 
 
+class AddressSchema(Schema):
+    # user:
+    work_address: bool = False
+    address1: str
+    address2: str = None
+    phone: str
+
+class AddressesCreate(AddressSchema):
+    user_id: str
+    city_id: UUID4
+    
+
+class AddressesUpdate(AddressSchema):
+    city_id: UUID4
+
+
+class AddressesOut(AddressSchema, UUIDSchema):
+    city: CitiesOut
+
+
 class ItemSchema(Schema):
     # user:
-    product: ProductOut
     item_qty: int
     ordered: bool
+    product: ProductOut
 
 
 class ItemCreate(Schema):
@@ -87,7 +106,30 @@ class ItemCreate(Schema):
     item_qty: int
 
 
-class ItemOut(UUIDSchema, ItemSchema):
+class ItemOut(ItemSchema, UUIDSchema):
     pass
 
 
+class OrderStatusOut(Schema):
+    title: str
+
+
+class UserOut(Schema):
+    username: str
+
+
+class OrderSchema(Schema):
+    items: List[ItemSchema]
+    status: OrderStatusOut
+    address: AddressesOut
+    order_total: float
+    ordered: bool
+    user: UserOut
+    ref_code: str
+    note: str
+
+
+class OrderCreate(Schema):
+    items: List[UUID4]
+    address: UUID4
+    note: str
