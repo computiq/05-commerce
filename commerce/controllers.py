@@ -187,12 +187,12 @@ def delete_city(request, id: UUID4):
     return 204, {'detail': ''}
 
 
-@address_controller.get('', response={
+@address_controller.get('', auth=GlobalAuth(), response={
     200: List[AddressesOut],
     404: MessageOut
 })
 def list_addresses(request):
-    address_set = Address.objects.all()
+    address_set = Address.objects.filter(user=request.auth['pk'])
 
     if address_set:
         return address_set
@@ -200,41 +200,42 @@ def list_addresses(request):
     return 404, {'detail': 'No addresses found'}
 
 
-@address_controller.get('{id}', response={
+@address_controller.get('{id}', auth=GlobalAuth(), response={
     200: AddressesOut,
     404: MessageOut
 })
 def retrieve_address(request, id: UUID4):
-    return get_object_or_404(Address, id=id)
+    return get_object_or_404(Address, id=id, user=request.auth['pk'])
 
 
-@address_controller.post('', response={
+@address_controller.post('', auth=GlobalAuth(), response={
     201: AddressesOut,
     400: MessageOut
 })
 def create_address(request, address_in: AddressesCreate):
     address = Address(**address_in.dict())
+    address.user = request.auth['pk']
     address.save()
     return 201, address
 
 
-@address_controller.put('{id}', response={
+@address_controller.put('{id}', auth=GlobalAuth(), response={
     200: AddressesOut,
     400: MessageOut
 })
 def update_address(request, id: UUID4, address_in: AddressesUpdate):
-    address = get_object_or_404(Address, id=id)
+    address = get_object_or_404(Address, id=id, user=request.auth['pk'])
     for attr, value in address_in.dict().items():
         setattr(address, attr, value)
     address.save()
     return 200, address
 
 
-@address_controller.delete('{id}', response={
+@address_controller.delete('{id}', auth=GlobalAuth(), response={
     204: MessageOut
 })
 def delete_address(request, id: UUID4):
-    address = get_object_or_404(Address, id=id)
+    address = get_object_or_404(Address, id=id, user=request.auth['pk'])
     address.delete()
     return 204, {'detail': ''}
 

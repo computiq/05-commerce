@@ -81,7 +81,6 @@ class AddressSchema(Schema):
 
 
 class AddressesCreate(AddressSchema):
-    user_id: str
     city_id: UUID4
 
 
