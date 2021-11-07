@@ -7,8 +7,6 @@ from pydantic import UUID4
 from commerce.models import Product, Merchant
 
 
-
-
 class UUIDSchema(Schema):
     id: UUID4
 

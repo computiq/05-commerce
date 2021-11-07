@@ -300,24 +300,41 @@ def view_cart(request):
 
 @order_controller.post('add-to-cart', auth=GlobalAuth(), response={
     200: MessageOut,
+    401: MessageOut
     # 400: MessageOut
 })
 def add_update_cart(request, item_in: ItemCreate):
+    # checks if the token is valid or exists
+    if 'pk' not in request.auth:
+        return 401, {'detail': 'unauthorized'}
+    # gets the user from pk
+    user = User.objects.filter(id=request.auth['pk'])[0]
+
     try:
-        item = Item.objects.get(product_id=item_in.product_id, user=get_object_or_404(User, request.auth['pk']))
-        item.item_qty += 1
+        # if the item already exists then add the qty amount to the current amount
+        item = Item.objects.get(product_id=item_in.product_id, user=user)
+        item.item_qty += item_in.item_qty
         item.save()
     except Item.DoesNotExist:
-        Item.objects.create(**item_in.dict(), user=get_object_or_404(User, request.auth['pk']))
+        # if it doesn't exist just create it with the desired amount
+        Item.objects.create(**item_in.dict(), user=user)
 
     return 200, {'detail': 'Added to cart successfully'}
 
 
 @order_controller.post('item/{id}/reduce-quantity', auth=GlobalAuth(), response={
     200: MessageOut,
+    401: MessageOut
 })
 def reduce_item_quantity(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=get_object_or_404(User, request.auth['pk']))
+    # checks if the token is valid or exists
+    if 'pk' not in request.auth:
+        return 401, {'detail': 'unauthorized'}
+    # gets the user from pk
+    user = User.objects.filter(id=request.auth['pk'])[0]
+
+    # if its the users item it will reduce the quantity, else, it will return 404
+    item = get_object_or_404(Item, id=id, user=user)
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
@@ -328,10 +345,17 @@ def reduce_item_quantity(request, id: UUID4):
 
 
 @order_controller.delete('item/{id}', auth=GlobalAuth(), response={
-    204: MessageOut
+    204: MessageOut,
+    401: MessageOut
 })
 def delete_item(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=get_object_or_404(User, request.auth['pk']))
+    if 'pk' not in request.auth:
+        return 401, {'detail': 'unauthorized'}
+    # gets the user from pk
+    user = User.objects.filter(id=request.auth['pk'])[0]
+
+    # it will delete the item only if the item id and the product id are valid with the same item, else, 404
+    item = get_object_or_404(Item, id=id, user=user)
     item.delete()
 
     return 204, {'detail': 'Item deleted!'}
@@ -342,7 +366,13 @@ def delete_item(request, id: UUID4):
     404: MessageOut
 })
 def increase_quantity(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=get_object_or_404(User, request.auth['pk']))
+    # checks if the token is valid or exists
+    if 'pk' not in request.auth:
+        return 401, {'detail': 'unauthorized'}
+    # gets the user from pk
+    user = User.objects.filter(id=request.auth['pk'])[0]
+
+    item = get_object_or_404(Item, id=id, user=user)
     item.item_qty += 1
     item.save()
     return 200, {"detail": f"Item increased from {item.item_qty - 1} to {item.item_qty} successfully."}
@@ -355,7 +385,8 @@ def generate_ref_code():
 @order_controller.post('create-order', auth=GlobalAuth(), response={
     201: MessageOut,
     400: MessageOut,
-    403: MessageOut
+    403: MessageOut,
+    401: MessageOut
 })
 def create_order(request):
     '''
@@ -364,61 +395,77 @@ def create_order(request):
     * add NEW status
     * calculate the total
     '''
+    # checks if the token is valid or exists
+    if 'pk' not in request.auth:
+        return 401, {'detail': 'unauthorized'}
+    # gets the user from pk
+    user = User.objects.filter(id=request.auth['pk'])[0]
+
     # First, checks whether there are items in the cart (items that are not ordered)
-    user_items = Item.objects.filter(user=get_object_or_404(User, request.auth['pk'])).filter(ordered=False)
+    user_items = Item.objects.filter(user=user, ordered=False)
     if not user_items:
         return 400, {'detail': 'Can not create an order of an empty cart.'}
 
     '''
-    Secondly, checks if there are already an active order.
-    If True, add the items then merge the duplicates
-    Else, make a new active order
+    Secondly, checks if there are no already active order.
+    If True, make a new active order
+    Else, add the items then merge the duplicates
     '''
-    order = Order.objects.filter(user=get_object_or_404(User, request.auth['pk']), ordered=False)[0]
-    if order:
-        ordered_products_id = list(Item.objects.filter(ordered=True).values('product_id'))
-        ordered_products_id = list(map(lambda x: x['product_id'], ordered_products_id))
-        for item in user_items:
-            if item.product_id in ordered_products_id:
-                ordered_item = Item.objects.filter(product_id=item.product_id)[0]
-                ordered_item.item_qty += item.item_qty
-                ordered_item.save()
-                item.delete()
-            else:
-                order.items.add(item)
+    order = Order.objects.filter(user=user, ordered=False)
+    if not order:
+        # New order
+        # Create an order query set and we'll initially use 4 out of 8 attributes in an order
+        order_qs = Order.objects.create(
+            user=user,
+            status=OrderStatus.objects.get(is_default=True),  # Which is 'NEW' (must be added in the database)
+            ref_code=generate_ref_code(),
+            ordered=False,
+        )
+        # add them to the order
+        order_qs.items.add(*user_items)
         # calculate the total
-        order.total = order.order_total
+        order_qs.total = order_qs.order_total
         # mark items as ordered (added to a user order)
         user_items.update(ordered=True)
-        order.save()
+        order_qs.save()
 
-        return 201, {"detail": "There was already an order and your cart items were merged."}
+        return 201, {'detail': 'order created successfully'}
 
-    # New order
-    # Create an order query set and we'll initially use 4 out of 8 attributes in an order
-    order_qs = Order.objects.create(
-        user=get_object_or_404(User, request.auth['pk']),
-        status=OrderStatus.objects.get(is_default=True),  # Which is 'NEW'
-        ref_code=generate_ref_code(),
-        ordered=False,
-    )
-    # add them to the order
-    order_qs.items.add(*user_items)
+    # get the order from query set to start working on it
+    order = order[0]
+
+    ordered_products_id = list(Item.objects.filter(ordered=True).values('product_id'))
+    ordered_products_id = list(map(lambda x: x['product_id'], ordered_products_id))
+    for item in user_items:
+        if item.product_id in ordered_products_id:
+            ordered_item = Item.objects.filter(product_id=item.product_id)[0]
+            ordered_item.item_qty += item.item_qty
+            ordered_item.save()
+            # after merge delete item
+            item.delete()
+        else:
+            order.items.add(item)
     # calculate the total
-    order_qs.total = order_qs.order_total
+    order.total = order.order_total
     # mark items as ordered (added to a user order)
     user_items.update(ordered=True)
-    order_qs.save()
+    order.save()
 
-    return 201, {'detail': 'order created successfully'}
+    return 201, {"detail": "There was already an order and your cart items were merged."}
 
 
 @order_controller.post("checkout", auth=GlobalAuth(), response={
     200: MessageOut,
-    404: MessageOut
+    404: MessageOut,
+    401: MessageOut
 })
 def checkout(request, checkout_data_in: CheckoutSchema):
-    current_order = Order.objects.filter(user=get_object_or_404(User, request.auth['pk'])).filter(ordered=False)
+    if 'pk' not in request.auth:
+        return 401, {'detail': 'unauthorized'}
+    # gets the user from pk
+    user = User.objects.filter(id=request.auth['pk'])[0]
+
+    current_order = Order.objects.filter(user=user, ordered=False)
     if current_order:
         processing = OrderStatus.objects.get(title='PROCESSING')  # proccessing must be added
         current_order.update(**checkout_data_in.dict(), status=processing.id, ordered=True)
