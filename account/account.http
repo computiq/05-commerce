@@ -1,7 +1,7 @@
 GET localhost:8000/api/auth
 Content-Type: application/json
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
 
 ###
 POST localhost:8000/api/auth/signin
@@ -9,25 +9,37 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "email": "user@example.com",
-  "password": "!!123123!!"
+  "email": "u4@me.me",
+  "password": "12345678!"
 }
 
+###
+POST localhost:8000/api/auth/signup
+Content-Type: application/json
+Accept: application/json
+
+{
+  "first_name": "rb",
+  "last_name": "rb",
+  "email": "u2@gmail.com",
+  "password1": "1234567!",
+  "password2": "1234567!"
+}
 ###
 GET localhost:8000/api/auth
 Content-Type: application/json
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
 
 ###
 PUT localhost:8000/api/auth
 Content-Type: application/json
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
 
 {
-  "first_name": "Layth",
-  "last_name": "Zahid",
+  "first_name": "rb",
+  "last_name": "al",
   "phone_number": "077",
   "address1": "Anything",
   "address2": "",
@@ -40,7 +52,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1L
 POST localhost:8000/api/auth/change-password
 Content-Type: application/json
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImY0MzkyMDQ1LTRmOTktNDk0NC05ZjNhLThlNGNhZTEzMjk3MCJ9.kmsdiH0zSlYyB-_8mV-sVdE0pDBEJSzszCPyJ5zQHMk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
 
 {
   "old_password": "string!!",
