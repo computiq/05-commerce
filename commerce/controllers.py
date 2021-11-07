@@ -1,24 +1,28 @@
-import random
-import string
+import random, string
 from typing import List
-
-from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from pydantic import UUID4
 
 from account.authorization import GlobalAuth
-from commerce.models import Product, Category, City, Vendor, Item, Order, OrderStatus
-from commerce.schemas import ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate
+from account.schemas import SigninSchema
+from commerce.models import Product, Category, City, Vendor, Item, Address, Order, OrderStatus
+from commerce.schemas import ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemCreate, \
+    AddressSchema, AddressOut, CheckoutSchema
+
+from django.contrib.auth import get_user_model, authenticate
+
 from config.utils.schemas import MessageOut
 
+User = get_user_model()
+
+''' Routers '''
 products_controller = Router(tags=['products'])
 address_controller = Router(tags=['addresses'])
 vendor_controller = Router(tags=['vendors'])
 order_controller = Router(tags=['orders'])
 
-User = get_user_model()
 
 @vendor_controller.get('', response=List[VendorOut])
 def list_vendors(request):
@@ -58,70 +62,7 @@ def list_products(
     return products_qs
 
 
-"""
-# product = Product.objects.all().select_related('merchant', 'category', 'vendor', 'label')
-    # print(product)
-    #
-    # order = Product.objects.all().select_related('address', 'user').prefetch_related('items')
-
-    # try:
-    #     one_product = Product.objects.get(id='8d3dd0f1-2910-457c-89e3-1b0ed6aa720a')
-    # except Product.DoesNotExist:
-    #     return {"detail": "Not found"}
-    # print(one_product)
-    #
-    # shortcut_function = get_object_or_404(Product, id='8d3dd0f1-2910-457c-89e3-1b0ed6aa720a')
-    # print(shortcut_function)
-
-    # print(type(product))
-    # print(product.merchant.name)
-    # print(type(product.merchant))
-    # print(type(product.category))
-
-
-Product <- Merchant, Label, Category, Vendor
-
-Retrieve 1000 Products form DB
-
-products = Product.objects.all()[:1000] (select * from product limit 1000)
-
-for p in products:
-    print(p)
-    
-for every product, we retrieve (Merchant, Label, Category, Vendor) records
-
-Merchant.objects.get(id=p.merchant_id) (select * from merchant where id = 'p.merchant_id')
-Label.objects.get(id=p.label_id) (select * from merchant where id = 'p.label_id')
-Category.objects.get(id=p.category_id) (select * from merchant where id = 'p.category_id')
-Vendor.objects.get(id=p.vendor_id) (select * from merchant where id = 'p.vendor_id')
-
-4*1000+1
-
-Solution: Eager loading
-
-products = (select * from product limit 1000)
-
-mids = [p1.merchant_id, p2.merchant_id, ...]
-[p1.label_id, p2.label_id, ...]
-.
-.
-.
-
-select * from merchant where id in (mids) * 4 for (label, category and vendor)
-
-4+1
-
-"""
-
-
-@address_controller.get('')
-def list_addresses(request):
-    pass
-
-
-# @products_controller.get('categories', response=List[CategoryOut])
-# def list_categories(request):
-#     return Category.objects.all()
+""" Cities """
 
 
 @address_controller.get('cities', response={
@@ -145,6 +86,7 @@ def retrieve_city(request, id: UUID4):
     return get_object_or_404(City, id=id)
 
 
+# no auth for post in controller
 @address_controller.post('cities', response={
     201: CitiesOut,
     400: MessageOut
@@ -157,7 +99,7 @@ def create_city(request, city_in: CitySchema):
 
 @address_controller.put('cities/{id}', response={
     200: CitiesOut,
-    400: MessageOut
+    404: MessageOut
 })
 def update_city(request, id: UUID4, city_in: CitySchema):
     city = get_object_or_404(City, id=id)
@@ -175,12 +117,74 @@ def delete_city(request, id: UUID4):
     return 204, {'detail': ''}
 
 
+""" Addresses """
+
+
+@address_controller.get('', response={
+    200: List[AddressOut],
+    404: MessageOut
+})
+def list_addresses(request):
+    addresses = Address.objects.all()
+    if addresses:
+        return addresses
+    return 404, {'detail': 'No Addresses Found'}
+
+
+@address_controller.get('/{id}', response={
+    200: AddressOut,
+    404: MessageOut
+})
+def retrieve_address(request, id: UUID4):
+    address = get_object_or_404(Address, id=id)
+    return address
+
+
+@address_controller.post('', response={
+    201: AddressOut,
+    400: MessageOut
+})
+def create_address(request, address_in: AddressSchema):
+    city_instance = City.objects.get(id=address_in.city)
+    del address_in.city
+    user = get_object_or_404(User, id=request.auth['pk'])
+    address = Address.objects.create(**address_in.dict(), city=city_instance, user=user)
+    address.save()
+    return 201, address
+
+
+@address_controller.put('/{id}', response={
+    200: AddressOut,
+    404: MessageOut
+})
+def update_address(request, id: UUID4, new_data: AddressSchema):
+    address = get_object_or_404(Address, id=id)
+    city_instance = City.objects.get(id=new_data.city)
+    new_data.city = city_instance
+    for attr, value in new_data.dict().items():
+        setattr(address, attr, value)
+    address.save()
+    return 200, address
+
+
+@address_controller.delete('/{id}', response={
+    204: MessageOut
+})
+def delete_address(request, id: UUID4):
+    address = get_object_or_404(Address, id=id)
+    address.delete()
+    return 204, {'detail': ''}
+
+
+""" Orders """
+
+
 @order_controller.get('cart', response={
     200: List[ItemOut],
     404: MessageOut
 })
 def view_cart(request):
-    cart_items = Item.objects.filter(user=User.objects.first(), ordered=False)
+    cart_items = Item.objects.filter(user_id=request.auth['pk'], ordered=False)
 
     if cart_items:
         return cart_items
@@ -190,15 +194,15 @@ def view_cart(request):
 
 @order_controller.post('add-to-cart', response={
     200: MessageOut,
-    # 400: MessageOut
+    400: MessageOut
 })
 def add_update_cart(request, item_in: ItemCreate):
     try:
-        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.first())
+        item = Item.objects.get(product_id=item_in.product_id, user_id=request.auth['pk'])
         item.item_qty += 1
         item.save()
     except Item.DoesNotExist:
-        Item.objects.create(**item_in.dict(), user=User.objects.first())
+        Item.objects.create(**item_in.dict(), user_id=request.auth['pk'])
 
     return 200, {'detail': 'Added to cart successfully'}
 
@@ -207,7 +211,7 @@ def add_update_cart(request, item_in: ItemCreate):
     200: MessageOut,
 })
 def reduce_item_quantity(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user_id=request.auth['pk'])
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
@@ -217,41 +221,88 @@ def reduce_item_quantity(request, id: UUID4):
     return 200, {'detail': 'Item quantity reduced successfully!'}
 
 
+@order_controller.post('item/{id}/increase-quantity', response={
+    200: MessageOut,
+})
+def increase_item_quantity(request, id: UUID4):
+    item = get_object_or_404(Item, id=id, user_id=request.auth['pk'])
+    item.item_qty += 1
+    item.save()
+
+    return 200, {'detail': 'Item quantity increased successfully!'}
+
+
 @order_controller.delete('item/{id}', response={
     204: MessageOut
 })
 def delete_item(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user_id=request.auth['pk'])
     item.delete()
 
     return 204, {'detail': 'Item deleted!'}
 
 
-def generate_ref_code():
-    return ''.join(random.sample(string.ascii_letters + string.digits, 6))
+def ref_code():
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=6))
 
 
-@order_controller.post('create-order', auth=GlobalAuth(), response=MessageOut)
+@order_controller.post('/create-order', response={
+    200: MessageOut,
+    400: MessageOut
+})
 def create_order(request):
-    '''
-    * add items and mark (ordered) field as True
-    * add ref_number
-    * add NEW status
-    * calculate the total
-    '''
+    user = get_object_or_404(User, id=request.auth['pk'])
+    if not Order.objects.filter(ordered=False):
+        order = Order.objects.create(
+            user=user,
+            status=OrderStatus.objects.get(is_default=True),
+            ref_code=ref_code(),
+            ordered=False
+        )
 
-    order_qs = Order.objects.create(
-        user=User.objects.first(),
-        status=OrderStatus.objects.get(is_default=True),
-        ref_code=generate_ref_code(),
-        ordered=False,
-    )
+        user_items = Item.objects.filter(user=user).filter(ordered=False)
+        order.items.add(*user_items)
+        order.total = order.order_total
+        user_items.update(ordered=True)
+        order.save()
+        return 200, {'detail': 'created successfully '}
 
-    user_items = Item.objects.filter(user=User.objects.first()).filter(ordered=False)
+    else:
+        order = Order.objects.filter(user=user, ordered=False)
+        order_items = Order.objects.filter(user=user, ordered=False).values('items__product__id',
+                                                                                            'items__item_qty',
+                                                                                            'items__product__discounted_price')
+        cart_items = Item.objects.filter(user=user).values('product', 'item_qty')
+        for item_in_cart in list(cart_items):
+            for item_in_order in list(order_items):
+                if item_in_cart['product'] == item_in_order['items__product__id']:
+                    item_in_cart['item_qty'] += item_in_order['items__item_qty']
 
-    order_qs.items.add(*user_items)
-    order_qs.total = order_qs.order_total
-    user_items.update(ordered=True)
-    order_qs.save()
+                    # if not order.ordered:
+                    #     item_discounted_price = [li['items__product__discounted_price'] for li in order_items]
+                    #
+                    #     for discount in item_discounted_price:
+                    #         total_price = sum(item['item_qty'] * discount for item in list(cart_items))
+                    #
+                    #     order.total = order.total_price
+                    #     order.save()
 
-    return {'detail': 'order created successfully'}
+    return 400, {'detail': 'There is an active order'}
+
+
+@order_controller.post('/checkout', response={
+    200: MessageOut,
+    404: MessageOut
+})
+def checkout(request, checkout_info: CheckoutSchema):
+    order_obj = get_object_or_404(Order, user=request.auth['pk'], ordered=False)
+
+    if order_obj:
+        order_obj.note = checkout_info.note
+        order_obj.address = Address.objects.get(id=checkout_info.address)
+        order_obj.status = OrderStatus.objects.get(is_default=False)
+        order_obj.ordered = True
+        order_obj.save()
+        return 200, {'detail': 'checkout done'}
+
+    return 404, {'detail': 'No active orders found'}
