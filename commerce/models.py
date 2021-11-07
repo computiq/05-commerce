@@ -117,7 +117,6 @@ class Category(Entity):
     image = models.ImageField('image', upload_to='category/')
     is_active = models.BooleanField('is active')
 
-
     def __str__(self):
         if self.parent:
             return f'-   {self.name}'
@@ -130,6 +129,7 @@ class Category(Entity):
     @property
     def children(self):
         return self.children
+
 
 class Merchant(Entity):
     name = models.CharField('name', max_length=255)

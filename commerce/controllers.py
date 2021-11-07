@@ -9,11 +9,11 @@ from ninja import Router
 from pydantic import UUID4
 
 from account.authorization import GlobalAuth
-from commerce.models import Product, Category, City, Vendor, Item, Address\
-    ,Order, OrderStatus
-from commerce.schemas import MessageOut, ProductOut, CitiesOut, CitySchema \
-    , VendorOut, ItemOut, ItemSchema, ItemCreate, CategoryOut, AddressSchema\
-    , AddressesOut , AddressesCreate, AddressesUpdate, OrderSchema, OrderCreate
+from commerce.models import Product, Category, City, Vendor, Item, Address,\
+    Order, OrderStatus
+from commerce.schemas import ProductOut, CitiesOut, CitySchema, VendorOut,\
+    ItemOut, ItemSchema, ItemCreate, CategoryOut, AddressSchema, AddressesOut,\
+    AddressesCreate, AddressesUpdate, OrderSchema, OrderCreate
 from config.utils.schemas import MessageOut
 
 products_controller = Router(tags=['products'])
@@ -22,6 +22,7 @@ vendor_controller = Router(tags=['vendors'])
 order_controller = Router(tags=['orders'])
 
 User = get_user_model()
+
 
 @vendor_controller.get('', response=List[VendorOut])
 def list_vendors(request):
@@ -38,11 +39,11 @@ def list_vendors(request):
     404: MessageOut
 })
 def list_products(
-        request, *,
-        q: str = None,
-        price_from: int = None,
-        price_to: int = None,
-        vendor=None,
+    request, *,
+    q: str = None,
+    price_from: int = None,
+    price_to: int = None,
+    vendor=None,
 ):
     products_set = Product.objects.filter(is_active=True).select_related('merchant', 'vendor', 'category', 'label')
 
