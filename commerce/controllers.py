@@ -240,12 +240,12 @@ def delete_address(request, id: UUID4):
     return 204, {'detail': ''}
 
 
-@order_controller.get('cart', response={
+@order_controller.get('cart', auth=GlobalAuth(), response={
     200: List[ItemOut],
     404: MessageOut
 })
 def view_cart(request):
-    cart_items = Item.objects.filter(user=User.objects.first(), ordered=False)
+    cart_items = Item.objects.filter(user=request.auth['pk'], ordered=False)
 
     if cart_items:
         return cart_items
@@ -253,26 +253,26 @@ def view_cart(request):
     return 404, {'detail': 'Your cart is empty, go shop like crazy!'}
 
 
-@order_controller.post('add-to-cart', response={
+@order_controller.post('add-to-cart', auth=GlobalAuth(), response={
     200: MessageOut,
     400: MessageOut
 })
 def add_update_cart(request, item_in: ItemCreate):
     try:
-        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.first())
+        item = Item.objects.get(product_id=item_in.product_id, user=request.auth['pk'])
         item.item_qty += 1
         item.save()
     except Item.DoesNotExist:
-        Item.objects.create(**item_in.dict(), user=User.objects.first())
+        Item.objects.create(**item_in.dict(), user=request.auth['pk'])
 
     return 200, {'detail': 'Added to cart successfully'}
 
 
-@order_controller.post('item/{id}/reduce-quantity', response={
+@order_controller.post('item/{id}/reduce-quantity', auth=GlobalAuth(), response={
     200: MessageOut,
 })
 def reduce_item_quantity(request, id: UUID4, qty: int = 1):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=request.auth['pk'])
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
@@ -282,32 +282,32 @@ def reduce_item_quantity(request, id: UUID4, qty: int = 1):
     return 200, {'detail': 'Item quantity reduced successfully!'}
 
 
-@order_controller.post('item/{id}/increase-quantity', response={
+@order_controller.post('item/{id}/increase-quantity', auth=GlobalAuth(), response={
     200: MessageOut,
 })
 def increase_item_quantity(request, id: UUID4, qty: int = 1):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=request.auth['pk'])
     item.item_qty += qty
     item.save()
     return 200, {'detail': 'Item quantity increased successfully!'}
 
 
-@order_controller.delete('item/{id}', response={
+@order_controller.delete('item/{id}', auth=GlobalAuth(), response={
     204: MessageOut
 })
 def delete_item(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=request.auth['pk'])
     item.delete()
 
     return 204, {'detail': 'Item deleted!'}
 
 
-@order_controller.get('', response={
+@order_controller.get('', auth=GlobalAuth(), response={
     200: List[OrderSchema],
     404: MessageOut
 })
 def list_orders(request, ordered: bool = False):
-    order_set = Order.objects.filter(user=User.objects.first())
+    order_set = Order.objects.filter(user=request.auth['pk'])
     if not ordered:
         order_set = order_set.filter(ordered=ordered)
     if not order_set:
@@ -321,12 +321,12 @@ def gen_code(size=6):
     return code
 
 
-@order_controller.post('create-order', response={
+@order_controller.post('create-order', auth=GlobalAuth(), response={
     200: MessageOut
 })
 def create_order(request, item_in: OrderCreate):
-    user = User.objects.first()
-    items = Item.objects.filter(id__in=item_in.items)
+    user = User.objects.get(id=request.auth['pk'])
+    items = Item.objects.filter(id__in=item_in.items, user=request.auth['pk'])
     current_order = Order.objects.filter(user=user, ordered=False)
 
     if current_order.exists():
@@ -363,7 +363,7 @@ def create_order(request, item_in: OrderCreate):
 })
 def checkout_order(request):
     try:
-        order_set = Order.objects.get(ordered=False, user=User.objects.first())
+        order_set = Order.objects.get(ordered=False, user=request.auth['pk'])
     except Order.DoesNotExist:
         return 404, {'detail': 'No order exists'}
 
