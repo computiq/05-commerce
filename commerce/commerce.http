@@ -1,0 +1,143 @@
+### Cities ###
+GET localhost:8000/api/addresses/cities
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
+
+###
+GET localhost:8000/api/addresses/cities/e6b4c482-8790-4eb1-9f02-c30154c83ead
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
+
+###
+POST localhost:8000/api/addresses/cities
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
+
+{
+  "name": "someCity"
+}
+
+
+###
+PUT localhost:8000/api/addresses/cities/febb249f-32d4-427d-b817-3e979285c564
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
+
+{
+  "name": "anotherCity"
+}
+
+
+###
+DELETE localhost:8000/api/addresses/cities/05ea76ed-6c1f-4e52-b977-83ec01af92a7
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
+
+
+### Addresses ###
+GET localhost:8000/api/addresses
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
+
+###
+POST localhost:8000/api/addresses
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjQ5NzM3NzgxLTQzNmYtNGZjYy1hNTM0LWE0MDcwOTZhYTEyZCJ9.EtvJKtq67XQnjIeuE2sm0QmI8pbpdtB3u3MON3PjjYI
+
+{
+  "work_address": true,
+  "address1": "ad1",
+  "address2": "ad2",
+  "city": "423f8087-0f94-4a2e-a000-b666b67f06b5",
+  "phone": 2345
+}
+
+###
+GET localhost:8000/api/addresses/6f062ec4-ab1e-4100-8fc2-a14464bfc1ef
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
+
+
+###
+PUT localhost:8000/api/addresses/6f062ec4-ab1e-4100-8fc2-a14464bfc1ef
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
+
+{
+  "work_address": true,
+  "address1": "ed1",
+  "address2": "ed2",
+  "city": "cf14325f-4f98-4be8-9121-2c91ec240758",
+  "phone": 789786656
+}
+
+
+###
+DELETE localhost:8000/api/addresses/6f062ec4-ab1e-4100-8fc2-a14464bfc1ef
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6ImQ3MDA1YjMxLTc3NDEtNDZlNi05NDFjLTM3YmQ1NWY2ZDM4ZiJ9.uwojP9bFnis3PRIzqG46fEUvlvmXfVLWG6kPUw8AmrU
+
+
+###  Orders  ###
+GET localhost:8000/api/orders/cart
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjQ5NzM3NzgxLTQzNmYtNGZjYy1hNTM0LWE0MDcwOTZhYTEyZCJ9.EtvJKtq67XQnjIeuE2sm0QmI8pbpdtB3u3MON3PjjYI
+
+###
+POST localhost:8000/api/orders/add-to-cart
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjQ5NzM3NzgxLTQzNmYtNGZjYy1hNTM0LWE0MDcwOTZhYTEyZCJ9.EtvJKtq67XQnjIeuE2sm0QmI8pbpdtB3u3MON3PjjYI
+
+{
+  "product_id": "8c64de55-b117-4e81-9698-e97a73ce1d87",
+  "item_qty": 2
+}
+
+
+###
+POST localhost:8000/api/orders/item/09a88a6d-f5b1-4f71-a458-9aa9fa074dad/reduce-quantity
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjQ5NzM3NzgxLTQzNmYtNGZjYy1hNTM0LWE0MDcwOTZhYTEyZCJ9.EtvJKtq67XQnjIeuE2sm0QmI8pbpdtB3u3MON3PjjYI
+
+###
+POST localhost:8000/api/orders/item/09a88a6d-f5b1-4f71-a458-9aa9fa074dad/increase-quantity
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjQ5NzM3NzgxLTQzNmYtNGZjYy1hNTM0LWE0MDcwOTZhYTEyZCJ9.EtvJKtq67XQnjIeuE2sm0QmI8pbpdtB3u3MON3PjjYI
+
+###
+DELETE localhost:8000/api/orders/item/09a88a6d-f5b1-4f71-a458-9aa9fa074dad
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjQ5NzM3NzgxLTQzNmYtNGZjYy1hNTM0LWE0MDcwOTZhYTEyZCJ9.EtvJKtq67XQnjIeuE2sm0QmI8pbpdtB3u3MON3PjjYI
+
+
+###
+POST localhost:8000/api/orders/create-order
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjQ5NzM3NzgxLTQzNmYtNGZjYy1hNTM0LWE0MDcwOTZhYTEyZCJ9.EtvJKtq67XQnjIeuE2sm0QmI8pbpdtB3u3MON3PjjYI
+
+###
+POST localhost:8000/api/orders/checkout
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwayI6IjQ5NzM3NzgxLTQzNmYtNGZjYy1hNTM0LWE0MDcwOTZhYTEyZCJ9.EtvJKtq67XQnjIeuE2sm0QmI8pbpdtB3u3MON3PjjYI
+
+{
+  "note": "anyNote",
+  "address": "6f062ec4-ab1e-4100-8fc2-a14464bfc1ef"
+}
