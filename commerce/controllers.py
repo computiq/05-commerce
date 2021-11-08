@@ -325,7 +325,7 @@ def create_address(request, address_in: AddressSchema):
 })
 def update_address(request, id: UUID4, address_in: AddressSchema):
     address = get_object_or_404(Address, id=id)
-    for key, value in address_in.items():
+    for key, value in address_in:
         setattr(address, key, value)
     return 200, address
 
@@ -343,6 +343,6 @@ def delete_address(request, id: UUID4):
 
 def checkout(request, id: UUID4, checkout_in: CheckoutSchema):
     order = get_object_or_404(Order, id=id)
-    for key, value in checkout_in.items():
+    for key, value in checkout_in:
         setattr(order, key, value)
     return {'detail': 'order checkout successfully'}
