@@ -91,3 +91,15 @@ class ItemOut(UUIDSchema, ItemSchema):
     pass
 
 
+class AddressSchema(Schema):
+    work_address:bool
+    address1:str
+    address2:str
+    phone:int
+
+class AddressOut(UUIDSchema,AddressSchema):
+    city:CitiesOut
+
+class CheckOut(Schema):
+    note:str
+    address:AddressOut

@@ -9,8 +9,8 @@ from ninja import Router
 from pydantic import UUID4
 
 from account.authorization import GlobalAuth
-from commerce.models import Product, Category, City, Vendor, Item, Order, OrderStatus
-from commerce.schemas import ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate
+from commerce.models import *
+from commerce.schemas import *
 from config.utils.schemas import MessageOut
 
 products_controller = Router(tags=['products'])
@@ -178,9 +178,9 @@ def delete_city(request, id: UUID4):
 @order_controller.get('cart', response={
     200: List[ItemOut],
     404: MessageOut
-})
+},auth=GlobalAuth())
 def view_cart(request):
-    cart_items = Item.objects.filter(user=User.objects.first(), ordered=False)
+    cart_items = Item.objects.filter(user=User.objects.get(id=request.auth['pk']), ordered=False)
 
     if cart_items:
         return cart_items
@@ -191,23 +191,23 @@ def view_cart(request):
 @order_controller.post('add-to-cart', response={
     200: MessageOut,
     # 400: MessageOut
-})
+},auth=GlobalAuth())
 def add_update_cart(request, item_in: ItemCreate):
     try:
-        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.first())
+        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.get(id=request.auth['pk']))
         item.item_qty += 1
         item.save()
     except Item.DoesNotExist:
-        Item.objects.create(**item_in.dict(), user=User.objects.first())
+        Item.objects.create(**item_in.dict(), user=User.objects.get(id=request.auth['pk']))
 
     return 200, {'detail': 'Added to cart successfully'}
 
 
 @order_controller.post('item/{id}/reduce-quantity', response={
     200: MessageOut,
-})
+},auth=GlobalAuth())
 def reduce_item_quantity(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=User.objects.get(id=request.auth['pk']))
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
@@ -219,9 +219,9 @@ def reduce_item_quantity(request, id: UUID4):
 
 @order_controller.delete('item/{id}', response={
     204: MessageOut
-})
+},auth=GlobalAuth())
 def delete_item(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=User.objects.get(id=request.auth['pk']))
     item.delete()
 
     return 204, {'detail': 'Item deleted!'}
@@ -241,13 +241,13 @@ def create_order(request):
     '''
 
     order_qs = Order.objects.create(
-        user=User.objects.first(),
+        user=User.objects.get(id=request.auth['pk']),
         status=OrderStatus.objects.get(is_default=True),
         ref_code=generate_ref_code(),
         ordered=False,
     )
 
-    user_items = Item.objects.filter(user=User.objects.first()).filter(ordered=False)
+    user_items = Item.objects.filter(user=User.objects.get(id=request.auth['pk'])).filter(ordered=False)
 
     order_qs.items.add(*user_items)
     order_qs.total = order_qs.order_total
@@ -255,3 +255,73 @@ def create_order(request):
     order_qs.save()
 
     return {'detail': 'order created successfully'}
+
+@order_controller.get('address', response={
+    200: List[AddressOut],
+    404: MessageOut
+    
+},auth=GlobalAuth())
+def list_address(request):
+    address_qs =Address.objects.all()
+
+    if address_qs:
+        return address_qs
+
+    return 404, {'detail': 'No address found'}
+
+
+@address_controller.get('order_address/{id}', response={
+    200: AddressOut,
+    404: MessageOut
+})
+def retrieve_address(request, id: UUID4):
+    return get_object_or_404(Address, id=id)
+
+
+@order_controller.post('order_address', response={
+    201: AddressOut,
+    400: MessageOut
+})
+def create_address(request, address_in:AddressSchema):
+    address = Address(**address_in.dict())
+    address.save()
+    return 201, address
+
+
+@order_controller.put('order_address/{id}', response={
+    200: AddressOut,
+    400: MessageOut
+})
+def update_address(request, id: UUID4, address_in:AddressSchema):
+    address = get_object_or_404(Address, id=id)
+    address.address1 = address_in.address1
+    address.address2 = address_in.address2
+    address.phone = address_in.phone
+    address.work_address=address_in.work_address 
+    address.save()
+    return 200, address
+
+
+@order_controller.delete('order_address/{id}', response={
+    204: MessageOut
+})
+def delete_city(request, id: UUID4):
+    address = get_object_or_404(Address, id=id)
+    address.delete()
+    return 204, {'detail': ''}
+
+
+#----------------checkout-----------
+
+@order_controller.post('checkout', response=MessageOut,auth=GlobalAuth())
+def checkout(request ,order_address:CheckOut):
+    order_item = Order.objects.filter(user=User.objects.get(id=request.auth['pk'])).filter(ordered=False)
+    if order_item:
+        order_item.note=order_address.note
+        order_item.address=order_address.address
+        order_item.update(ordered=True)
+        order_item.status=OrderStatus.objects.get(is_default=False)
+        order_item.save()
+        return {'detail':'done checkout'}
+    else:
+        return{'detail': 'nothing'}
