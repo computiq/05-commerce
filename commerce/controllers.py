@@ -7,25 +7,34 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from pydantic import UUID4
-
+from ninja import NinjaAPI
 from account.authorization import GlobalAuth
-from commerce.models import Product, Category, City, Vendor, Item, Order, OrderStatus
-from commerce.schemas import ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate
+from commerce.models import Product, Category, City, Vendor, Item, Order, OrderStatus,Address
+from commerce.schemas import (MessageOut, ProductOut, CitiesOut,
+                             CitySchema, VendorOut, ItemOut, 
+                             ItemSchema, ItemCreate, Add_address, AddressSchema,AddressOut,OrderSchema)
 from config.utils.schemas import MessageOut
+
+
+
+api = NinjaAPI(auth=GlobalAuth())
 
 products_controller = Router(tags=['products'])
 address_controller = Router(tags=['addresses'])
 vendor_controller = Router(tags=['vendors'])
 order_controller = Router(tags=['orders'])
+city_controller = Router(tags=['City'])
+checkout_controller = Router(tags=['checkout'])
+
 
 User = get_user_model()
 
-@vendor_controller.get('', response=List[VendorOut])
+@vendor_controller.get('',auth=None, response=List[VendorOut])
 def list_vendors(request):
     return Vendor.objects.all()
 
 
-@products_controller.get('', response={
+@products_controller.get('',auth=None, response={
     200: List[ProductOut],
     404: MessageOut
 })
@@ -114,7 +123,7 @@ select * from merchant where id in (mids) * 4 for (label, category and vendor)
 """
 
 
-@address_controller.get('')
+@city_controller.get('',auth=None)
 def list_addresses(request):
     pass
 
@@ -124,7 +133,7 @@ def list_addresses(request):
 #     return Category.objects.all()
 
 
-@address_controller.get('cities', response={
+@city_controller.get('cities',auth=None, response={
     200: List[CitiesOut],
     404: MessageOut
 })
@@ -137,7 +146,8 @@ def list_cities(request):
     return 404, {'detail': 'No cities found'}
 
 
-@address_controller.get('cities/{id}', response={
+
+@city_controller.get('cities/{id}',auth=None, response={
     200: CitiesOut,
     404: MessageOut
 })
@@ -145,7 +155,8 @@ def retrieve_city(request, id: UUID4):
     return get_object_or_404(City, id=id)
 
 
-@address_controller.post('cities', response={
+
+@city_controller.post('cities', response={
     201: CitiesOut,
     400: MessageOut
 })
@@ -155,7 +166,7 @@ def create_city(request, city_in: CitySchema):
     return 201, city
 
 
-@address_controller.put('cities/{id}', response={
+@city_controller.put('cities/{id}',response={
     200: CitiesOut,
     400: MessageOut
 })
@@ -166,7 +177,7 @@ def update_city(request, id: UUID4, city_in: CitySchema):
     return 200, city
 
 
-@address_controller.delete('cities/{id}', response={
+@city_controller.delete('cities/{id}', response={
     204: MessageOut
 })
 def delete_city(request, id: UUID4):
@@ -175,17 +186,23 @@ def delete_city(request, id: UUID4):
     return 204, {'detail': ''}
 
 
+
+#--------------------------------- Order --------------------------------
+#------------------------------------------------------------------------
+
+
 @order_controller.get('cart', response={
     200: List[ItemOut],
     404: MessageOut
 })
 def view_cart(request):
-    cart_items = Item.objects.filter(user=User.objects.first(), ordered=False)
+    cart_items = Item.objects.filter(user=request.auth['pk'], ordered=False)
 
     if cart_items:
         return cart_items
 
     return 404, {'detail': 'Your cart is empty, go shop like crazy!'}
+
 
 
 @order_controller.post('add-to-cart', response={
@@ -194,20 +211,22 @@ def view_cart(request):
 })
 def add_update_cart(request, item_in: ItemCreate):
     try:
-        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.first())
+        item = Item.objects.get(product_id=item_in.product_id, user=request.auth['pk'])
         item.item_qty += 1
         item.save()
     except Item.DoesNotExist:
-        Item.objects.create(**item_in.dict(), user=User.objects.first())
+        Item.objects.create(**item_in.dict(), user=request.auth['pk'])
 
     return 200, {'detail': 'Added to cart successfully'}
+
+
 
 
 @order_controller.post('item/{id}/reduce-quantity', response={
     200: MessageOut,
 })
 def reduce_item_quantity(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=request.auth['pk'])
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
@@ -221,7 +240,7 @@ def reduce_item_quantity(request, id: UUID4):
     204: MessageOut
 })
 def delete_item(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=request.auth['pk'])
     item.delete()
 
     return 204, {'detail': 'Item deleted!'}
@@ -231,7 +250,7 @@ def generate_ref_code():
     return ''.join(random.sample(string.ascii_letters + string.digits, 6))
 
 
-@order_controller.post('create-order', auth=GlobalAuth(), response=MessageOut)
+@order_controller.post('create-order',auth=None, response=MessageOut)
 def create_order(request):
     '''
     * add items and mark (ordered) field as True
@@ -239,19 +258,119 @@ def create_order(request):
     * add NEW status
     * calculate the total
     '''
-
-    order_qs = Order.objects.create(
-        user=User.objects.first(),
+    
+    order_qs = Order(
+        user=request.auth['pk'],
         status=OrderStatus.objects.get(is_default=True),
         ref_code=generate_ref_code(),
         ordered=False,
     )
 
-    user_items = Item.objects.filter(user=User.objects.first()).filter(ordered=False)
+    user_items = Item.objects.filter(user=request.auth['pk'], ordered=False)
+    user_items.update(ordered=True)
+    
 
+    
     order_qs.items.add(*user_items)
     order_qs.total = order_qs.order_total
     user_items.update(ordered=True)
     order_qs.save()
 
     return {'detail': 'order created successfully'}
+
+
+    #--------------------------- Addresses -----------------------------
+    #-------------------------------------------------------------------
+
+    
+@address_controller.get('address',auth=None, response={
+    200: List[AddressOut],
+    404: MessageOut
+})
+def list_Address(request):
+    Address_qs = Address.objects.all()
+
+    if  Address_qs:
+        return Address_qs
+
+    return 404, {'detail': 'No Address found'}
+
+
+
+@address_controller.get('address/{id}',auth=None, response={
+    200: AddressOut,
+    404: MessageOut
+})
+def retrieve_address(request, id: UUID4):
+    return get_object_or_404(Address, id=id)
+
+
+@address_controller.post('', response={
+    201: AddressOut,
+    400: MessageOut
+})
+def create_address(request, address_in:  Add_address):
+    city_instance = City.objects.get(id=address_in.city)
+    del address_in.city
+    address = Address.objects.create(**address_in.dict(), city=city_instance, user=request.auth['pk'])
+    address.save()
+    return 201, address
+
+
+@address_controller.put('/{id}', response={
+    200: AddressOut,
+    404: MessageOut
+})
+def update_address(request, id: UUID4, new_data:Add_address):
+    address = get_object_or_404(Address, id=id)
+    city_instance = City.objects.get(id=new_data.city)
+    new_data.city = city_instance
+    for attr, value in new_data.dict().items():
+        setattr(address, attr, value)
+    address.save()
+    return 200, address
+
+
+@address_controller.delete('addresses/{id}', response={
+    204: MessageOut
+})
+def delete_address(request, id: UUID4):
+    city = get_object_or_404(Address, id=id)
+    city.delete()
+    return 204, {'detail': ''}
+
+
+##--------------------------- checkOut --------------------------------
+##---------------------------------------------------------------------
+
+
+@checkout_controller.post('create-checkout', response=
+{ 200: MessageOut})
+
+def create_checkout(request,order_in:OrderSchema,note:str=None):
+    '''
+    * create the checkout endpoint
+  * you should be able to add an optional note
+  * you should be able to add an address to the order
+  * set (ordered field) to True, thus the order becomes sealed
+  * change order status accordingly
+   
+    '''
+
+    if get_object_or_404(City):
+        check_order=Order(
+            user=request.auth['pk'],
+            status=OrderStatus.objects.get(title='SHIPPED'),
+           
+
+        )
+        
+        check_order.note=note
+        check_order.ordered=True
+        check_order.address=Address.objects.get(id=order_in.address)
+        check_order.save()
+        return {'detail': ' checkout created successfully'}
+    else:
+        return MessageOut
+
+    

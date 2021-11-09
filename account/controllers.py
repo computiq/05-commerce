@@ -11,7 +11,7 @@ User = get_user_model()
 account_controller = Router(tags=['auth'])
 
 
-@account_controller.post('signup', response={
+@account_controller.post('signup',auth=None, response={
     400: MessageOut,
     201: AuthOut,
 })
@@ -39,7 +39,7 @@ def signup(request, account_in: AccountCreate):
     return 400, {'detail': 'User already registered!'}
 
 
-@account_controller.post('signin', response={
+@account_controller.post('signin',auth=None, response={
     200: AuthOut,
     404: MessageOut,
 })
@@ -57,12 +57,12 @@ def signin(request, signin_in: SigninSchema):
     }
 
 
-@account_controller.get('', auth=GlobalAuth(), response=AccountOut)
+@account_controller.get('',  response=AccountOut)
 def me(request):
     return get_object_or_404(User, id=request.auth['pk'])
 
 
-@account_controller.put('', auth=GlobalAuth(), response={
+@account_controller.put('',  response={
     200: AccountOut,
 
 })
@@ -71,7 +71,7 @@ def update_account(request, update_in: AccountUpdate):
     return get_object_or_404(User, id=request.auth['pk'])
 
 
-@account_controller.post('change-password', auth=GlobalAuth(), response={
+@account_controller.post('change-password', response={
     200: MessageOut,
     400: MessageOut
 })
