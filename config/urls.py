@@ -18,18 +18,20 @@ from django.contrib import admin
 from django.urls import path
 from ninja import NinjaAPI
 
+from account.authorization import GlobalAuth
 from account.controllers import account_controller
-from commerce.controllers import products_controller, address_controller, vendor_controller, order_controller
+from commerce.controllers import products_controller, address_controller, vendor_controller, order_controller,checkout_controller,city_controller
 from config import settings
 
-api = NinjaAPI()
+api = NinjaAPI(auth=GlobalAuth())
 
 api.add_router('products', products_controller)
 api.add_router('addresses', address_controller)
 api.add_router('vendors', vendor_controller)
 api.add_router('orders', order_controller)
 api.add_router('auth', account_controller)
-
+api.add_router('city', city_controller)
+api.add_router('checkout', checkout_controller)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', api.urls),
