@@ -20,12 +20,12 @@ order_controller = Router(tags=['orders'])
 
 User = get_user_model()
 
-@vendor_controller.get('', response=List[VendorOut])
+@vendor_controller.get('', auth=GlobalAuth(), response=List[VendorOut])
 def list_vendors(request):
     return Vendor.objects.all()
 
 
-@products_controller.get('', response={
+@products_controller.get('', auth=GlobalAuth(), response={
     200: List[ProductOut],
     404: MessageOut
 })
@@ -114,7 +114,7 @@ select * from merchant where id in (mids) * 4 for (label, category and vendor)
 """
 
 
-@address_controller.get('')
+@address_controller.get('', auth=GlobalAuth())
 def list_addresses(request):
     pass
 
@@ -124,7 +124,7 @@ def list_addresses(request):
 #     return Category.objects.all()
 
 
-@address_controller.get('cities', response={
+@address_controller.get('cities', auth=GlobalAuth(), response={
     200: List[CitiesOut],
     404: MessageOut
 })
@@ -137,7 +137,7 @@ def list_cities(request):
     return 404, {'detail': 'No cities found'}
 
 
-@address_controller.get('cities/{id}', response={
+@address_controller.get('cities/{id}', auth=GlobalAuth(), response={
     200: CitiesOut,
     404: MessageOut
 })
@@ -145,7 +145,7 @@ def retrieve_city(request, id: UUID4):
     return get_object_or_404(City, id=id)
 
 
-@address_controller.post('cities', response={
+@address_controller.post('cities', auth=GlobalAuth(), response={
     201: CitiesOut,
     400: MessageOut
 })
@@ -155,7 +155,7 @@ def create_city(request, city_in: CitySchema):
     return 201, city
 
 
-@address_controller.put('cities/{id}', response={
+@address_controller.put('cities/{id}', auth=GlobalAuth(), response={
     200: CitiesOut,
     400: MessageOut
 })
@@ -166,7 +166,7 @@ def update_city(request, id: UUID4, city_in: CitySchema):
     return 200, city
 
 
-@address_controller.delete('cities/{id}', response={
+@address_controller.delete('cities/{id}', auth=GlobalAuth(), response={
     204: MessageOut
 })
 def delete_city(request, id: UUID4):
@@ -175,7 +175,7 @@ def delete_city(request, id: UUID4):
     return 204, {'detail': ''}
 
 
-@order_controller.get('cart', response={
+@order_controller.get('cart', auth=GlobalAuth(), response={
     200: List[ItemOut],
     404: MessageOut
 })
@@ -188,7 +188,7 @@ def view_cart(request):
     return 404, {'detail': 'Your cart is empty, go shop like crazy!'}
 
 
-@order_controller.post('add-to-cart', response={
+@order_controller.post('add-to-cart', auth=GlobalAuth(), response={
     200: MessageOut,
     # 400: MessageOut
 })
@@ -203,7 +203,7 @@ def add_update_cart(request, item_in: ItemCreate):
     return 200, {'detail': 'Added to cart successfully'}
 
 
-@order_controller.post('item/{id}/reduce-quantity', response={
+@order_controller.post('item/{id}/reduce-quantity', auth=GlobalAuth(), response={
     200: MessageOut,
 })
 def reduce_item_quantity(request, id: UUID4):
@@ -217,7 +217,7 @@ def reduce_item_quantity(request, id: UUID4):
     return 200, {'detail': 'Item quantity reduced successfully!'}
 
 
-@order_controller.delete('item/{id}', response={
+@order_controller.delete('item/{id}', auth=GlobalAuth(), response={
     204: MessageOut
 })
 def delete_item(request, id: UUID4):
