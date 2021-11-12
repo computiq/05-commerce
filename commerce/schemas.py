@@ -1,13 +1,16 @@
 from typing import List
+from django.contrib.auth.models import User
 
 from ninja import ModelSchema, Schema
 from ninja.orm import create_schema
 from pydantic import UUID4
+from pydantic.schema import schema
 
-from commerce.models import Product, Merchant
+from commerce.models import City, Order, Product, Merchant
 
 
-
+class MessageOut(Schema):
+    detail: str
 
 
 class UUIDSchema(Schema):
@@ -74,6 +77,22 @@ class CitySchema(Schema):
 class CitiesOut(CitySchema, UUIDSchema):
     pass
 
+class AddressSchema(Schema):
+    work_address: bool
+    address1: str
+    address2: str
+    phone: str
+
+
+class AddressCreate(AddressSchema):
+    city_id: UUID4
+
+class AddressUpdate(AddressCreate, UUIDSchema):
+    pass
+
+
+class AddressOut(AddressSchema, UUIDSchema):
+    city: CitiesOut
 
 class ItemSchema(Schema):
     # user:
@@ -90,4 +109,6 @@ class ItemCreate(Schema):
 class ItemOut(UUIDSchema, ItemSchema):
     pass
 
-
+class CheckOut(Schema):
+    address_id: UUID4
+    note: str

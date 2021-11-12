@@ -10,7 +10,8 @@ User = get_user_model()
 TIME_DELTA = timedelta(days=120)
 
 class GlobalAuth(HttpBearer):
-    def authenticate(self, request, token):
+    @staticmethod
+    def authenticate(request, token):
         try:
             user_pk = jwt.decode(token=token, key=settings.SECRET_KEY, algorithms=['HS256'])
         except JWTError:
