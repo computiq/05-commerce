@@ -227,40 +227,12 @@ def delete_item(request, id: UUID4):
     return 204, {'detail': 'Item deleted!'}
 
 
-def generate_ref_code():
-    return ''.join(random.sample(string.ascii_letters + string.digits, 6))
-
-
-@order_controller.post('create-order', auth=GlobalAuth(), response=MessageOut)
-def create_order(request):
-    '''
-    * add items and mark (ordered) field as True
-    * add ref_number
-    * add NEW status
-    * calculate the total
-    '''
-
-    order_qs = Order.objects.create(
-        user=User.objects.get(id=request.auth['pk']),
-        status=OrderStatus.objects.get(is_default=True),
-        ref_code=generate_ref_code(),
-        ordered=False,
-    )
-
-    user_items = Item.objects.filter(user=User.objects.get(id=request.auth['pk'])).filter(ordered=False)
-
-    order_qs.items.add(*user_items)
-    order_qs.total = order_qs.order_total
-    user_items.update(ordered=True)
-    order_qs.save()
-
-    return {'detail': 'order created successfully'}
+#-----------address----------------
 
 @order_controller.get('address', response={
     200: List[AddressOut],
     404: MessageOut
-    
-},auth=GlobalAuth())
+})
 def list_address(request):
     address_qs =Address.objects.all()
 
@@ -281,9 +253,14 @@ def retrieve_address(request, id: UUID4):
 @order_controller.post('order_address', response={
     201: AddressOut,
     400: MessageOut
-})
+},auth=GlobalAuth())
 def create_address(request, address_in:AddressSchema):
-    address = Address(**address_in.dict())
+    city = City(**address_in.city.dict())
+    city.save()
+    address=Address.objects.create(address1=address_in.address1,address2=address_in.address2,
+    phone=address_in.phone,
+    work_address=address_in.work_address,
+    city=city,user=User.objects.get(id=request.auth['pk']))
     address.save()
     return 201, address
 
@@ -293,11 +270,14 @@ def create_address(request, address_in:AddressSchema):
     400: MessageOut
 })
 def update_address(request, id: UUID4, address_in:AddressSchema):
+    city = City(**address_in.city.dict())
+    city.save()
     address = get_object_or_404(Address, id=id)
     address.address1 = address_in.address1
     address.address2 = address_in.address2
     address.phone = address_in.phone
     address.work_address=address_in.work_address 
+    address.city=city
     address.save()
     return 200, address
 
@@ -311,17 +291,47 @@ def delete_city(request, id: UUID4):
     return 204, {'detail': ''}
 
 
+#-----------create-order----------------
+def generate_ref_code():
+    return ''.join(random.sample(string.ascii_letters + string.digits, 6))
+
+
+@order_controller.post('create-order', response=MessageOut,auth=GlobalAuth())
+def create_order(request):
+    order_qs = Order.objects.create(
+        user=User.objects.first(),
+        status=OrderStatus.objects.get(is_default=True),
+        ref_code=generate_ref_code(),
+        ordered=False,
+    )
+
+    user_items = Item.objects.filter(user=User.objects.get(id=request.auth['pk'])).filter(ordered=False)
+
+    order_qs.items.add(*user_items)
+    order_qs.total = order_qs.order_total
+    user_items.update(ordered=True)
+    order_qs.save()
+
+    return {'detail': 'order created successfully'}
+       
+
 #----------------checkout-----------
 
 @order_controller.post('checkout', response=MessageOut,auth=GlobalAuth())
 def checkout(request ,order_address:CheckOut):
     order_item = Order.objects.filter(user=User.objects.get(id=request.auth['pk'])).filter(ordered=False)
+    print(order_item)
+    city = City(**order_address.address.city.dict())
+    city.save()
+
     if order_item:
         order_item.note=order_address.note
-        order_item.address=order_address.address
+        order_item.address=Address.objects.create(address1=order_address.address.address1,address2=order_address.address.address2,
+        phone=order_address.address.phone,
+        work_address=order_address.address.work_address,
+        city=city,user=User.objects.get(id=request.auth['pk']))
         order_item.update(ordered=True)
-        order_item.status=OrderStatus.objects.get(is_default=False)
-        order_item.save()
+        order_item.status=OrderStatus.objects.get(is_default=True)
         return {'detail':'done checkout'}
-    else:
-        return{'detail': 'nothing'}
+    
+    return{'detail': 'nothing'}
