@@ -24,4 +24,3 @@ def get_tokens_for_user(user):
     return {
         'access': str(token),
     }
-

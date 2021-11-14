@@ -64,7 +64,6 @@ def me(request):
 
 @account_controller.put('', auth=GlobalAuth(), response={
     200: AccountOut,
-
 })
 def update_account(request, update_in: AccountUpdate):
     User.objects.filter(id=request.auth['pk']).update(**update_in.dict())
