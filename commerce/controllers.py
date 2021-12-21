@@ -58,70 +58,10 @@ def list_products(
     return products_qs
 
 
-"""
-# product = Product.objects.all().select_related('merchant', 'category', 'vendor', 'label')
-    # print(product)
-    #
-    # order = Product.objects.all().select_related('address', 'user').prefetch_related('items')
-
-    # try:
-    #     one_product = Product.objects.get(id='8d3dd0f1-2910-457c-89e3-1b0ed6aa720a')
-    # except Product.DoesNotExist:
-    #     return {"detail": "Not found"}
-    # print(one_product)
-    #
-    # shortcut_function = get_object_or_404(Product, id='8d3dd0f1-2910-457c-89e3-1b0ed6aa720a')
-    # print(shortcut_function)
-
-    # print(type(product))
-    # print(product.merchant.name)
-    # print(type(product.merchant))
-    # print(type(product.category))
-
-
-Product <- Merchant, Label, Category, Vendor
-
-Retrieve 1000 Products form DB
-
-products = Product.objects.all()[:1000] (select * from product limit 1000)
-
-for p in products:
-    print(p)
-    
-for every product, we retrieve (Merchant, Label, Category, Vendor) records
-
-Merchant.objects.get(id=p.merchant_id) (select * from merchant where id = 'p.merchant_id')
-Label.objects.get(id=p.label_id) (select * from merchant where id = 'p.label_id')
-Category.objects.get(id=p.category_id) (select * from merchant where id = 'p.category_id')
-Vendor.objects.get(id=p.vendor_id) (select * from merchant where id = 'p.vendor_id')
-
-4*1000+1
-
-Solution: Eager loading
-
-products = (select * from product limit 1000)
-
-mids = [p1.merchant_id, p2.merchant_id, ...]
-[p1.label_id, p2.label_id, ...]
-.
-.
-.
-
-select * from merchant where id in (mids) * 4 for (label, category and vendor)
-
-4+1
-
-"""
-
 
 @address_controller.get('')
 def list_addresses(request):
     pass
-
-
-# @products_controller.get('categories', response=List[CategoryOut])
-# def list_categories(request):
-#     return Category.objects.all()
 
 
 @address_controller.get('cities', response={
@@ -175,12 +115,12 @@ def delete_city(request, id: UUID4):
     return 204, {'detail': ''}
 
 
-@order_controller.get('cart', response={
+@order_controller.get('cart',auth=GlobalAuth(), response={
     200: List[ItemOut],
     404: MessageOut
 })
 def view_cart(request):
-    cart_items = Item.objects.filter(user=User.objects.first(), ordered=False)
+    cart_items = Item.objects.filter(user=request.auth['pk'], ordered=False)
 
     if cart_items:
         return cart_items
@@ -188,26 +128,26 @@ def view_cart(request):
     return 404, {'detail': 'Your cart is empty, go shop like crazy!'}
 
 
-@order_controller.post('add-to-cart', response={
+@order_controller.post('add-to-cart',auth=GlobalAuth(), response={
     200: MessageOut,
     # 400: MessageOut
 })
 def add_update_cart(request, item_in: ItemCreate):
     try:
-        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.first())
+        item = Item.objects.get(product_id=item_in.product_id, user=request.auth['pk'])
         item.item_qty += 1
         item.save()
     except Item.DoesNotExist:
-        Item.objects.create(**item_in.dict(), user=User.objects.first())
+        Item.objects.create(**item_in.dict(), user=request.auth['pk'])
 
     return 200, {'detail': 'Added to cart successfully'}
 
 
-@order_controller.post('item/{id}/reduce-quantity', response={
+@order_controller.post('item/{id}/reduce-quantity', auth=GlobalAuth(), response={
     200: MessageOut,
 })
 def reduce_item_quantity(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=request.auth['pk'])
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
@@ -217,11 +157,11 @@ def reduce_item_quantity(request, id: UUID4):
     return 200, {'detail': 'Item quantity reduced successfully!'}
 
 
-@order_controller.delete('item/{id}', response={
+@order_controller.delete('item/{id}', auth=GlobalAuth(), response={
     204: MessageOut
 })
 def delete_item(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=request.auth['pk'])
     item.delete()
 
     return 204, {'detail': 'Item deleted!'}
@@ -239,9 +179,10 @@ def create_order(request):
     * add NEW status
     * calculate the total
     '''
-
+    userauth= User.objects.filter(request.auth['pk'])
     order_qs = Order.objects.create(
-        user=User.objects.first(),
+       
+        User=userauth,
         status=OrderStatus.objects.get(is_default=True),
         ref_code=generate_ref_code(),
         ordered=False,
