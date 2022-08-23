@@ -12,30 +12,27 @@ User = get_user_model()
 class Product(Entity):
     name = models.CharField(verbose_name='name', max_length=255)
     description = models.TextField('description', null=True, blank=True)
-    weight = models.FloatField('weight', null=True, blank=True)
-    width = models.FloatField('width', null=True, blank=True)
-    height = models.FloatField('height', null=True, blank=True)
-    length = models.FloatField('length', null=True, blank=True)
     qty = models.DecimalField('qty', max_digits=10, decimal_places=2)
     cost = models.DecimalField('cost', max_digits=10, decimal_places=2)
+    img = models.ImageField('image', upload_to='products_images/',null = True)
     price = models.DecimalField('price', max_digits=10, decimal_places=2)
     discounted_price = models.DecimalField('discounted price', max_digits=10, decimal_places=2)
-    vendor = models.ForeignKey('commerce.Vendor', verbose_name='vendor', related_name='products',
-                               on_delete=models.SET_NULL,
-                               null=True, blank=True)
+    
     category = models.ForeignKey('commerce.Category', verbose_name='category', related_name='products',
                                  null=True,
                                  blank=True,
                                  on_delete=models.SET_NULL)
-    merchant = models.ForeignKey('commerce.Merchant', verbose_name='merchant', related_name='products',
-                                 null=True,
-                                 blank=True,
-                                 on_delete=models.SET_NULL)
-    is_featured = models.BooleanField('is featured')
-    is_active = models.BooleanField('is active')
+    product_type = models.ForeignKey('commerce.ProductType',null=True,on_delete=models.SET_NULL,related_name="products")
+    is_active = models.BooleanField('is active' , default=True)
     label = models.ForeignKey('commerce.Label', verbose_name='label', related_name='products', null=True, blank=True,
                               on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.name
+
+
+class ProductType(Entity):
+    name = models.CharField(max_length=100)
     def __str__(self):
         return self.name
 
@@ -70,12 +67,19 @@ class Item(Entity):
     """
     user = models.ForeignKey(User, verbose_name='user', related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey('commerce.Product', verbose_name='product',
-                                on_delete=models.CASCADE)
+                           on_delete=models.CASCADE)
     item_qty = models.IntegerField('item_qty')
+    item_size = models.ForeignKey('commerce.ProductSize',null=True,on_delete=models.SET_NULL,verbose_name="Size",related_name='items')
+
     ordered = models.BooleanField('ordered', default=False)
 
     def __str__(self):
         return self.product.name
+
+
+
+class ProductSize(Entity):
+    size = models.CharField("Size",max_length=20)
 
 
 class OrderStatus(Entity):
@@ -103,21 +107,14 @@ class OrderStatus(Entity):
 
 
 class Category(Entity):
-    parent = models.ForeignKey('self',
-                               verbose_name='parent',
-                               related_name='children',
-                               null=True,
-                               blank=True,
-                               on_delete=models.CASCADE)
+    types = models.ManyToManyField('commerce.ProductType',verbose_name='Types',related_name='categories',null=True,blank=True)
     name = models.CharField('name', max_length=255)
     description = models.TextField('description')
     image = models.ImageField('image', upload_to='category/')
-    is_active = models.BooleanField('is active')
+    is_active = models.BooleanField('is active',default=True)
 
 
     def __str__(self):
-        if self.parent:
-            return f'-   {self.name}'
         return f'{self.name}'
 
     class Meta:

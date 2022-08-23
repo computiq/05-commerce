@@ -10,8 +10,8 @@ from ninja import Router
 from pydantic import UUID4
 
 from account.authorization import GlobalAuth
-from commerce.models import Address, Product, Category, City, Vendor, Item, Order, OrderStatus
-from commerce.schemas import AddressIn, AddressOut, ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate
+from commerce.models import Address, Product, Category, City, Vendor, Item, Order, OrderStatus,ProductType
+from commerce.schemas import AddressIn,AddressOut,ProductTypeOut, ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate,CategoryOut
 from config.utils.schemas import MessageOut
 import string
 import random
@@ -21,6 +21,7 @@ address_controller = Router(tags=['addresses'])
 vendor_controller = Router(tags=['vendors'])
 order_controller = Router(tags=['orders'])
 checkout_controller = Router(tags=['checkout'])
+category_controllers = Router(tags=['Category'])
 
 
 User = get_user_model()
@@ -39,9 +40,8 @@ def list_products(
         q: str = None,
         price_from: int = None,
         price_to: int = None,
-        vendor=None,
 ):
-    products_qs = Product.objects.filter(is_active=True).select_related('merchant', 'vendor', 'category', 'label')
+    products_qs = Product.objects.filter(is_active=True).select_related('category', 'label')
 
     if not products_qs:
         return 404, {'detail': 'No products found'}
@@ -57,12 +57,21 @@ def list_products(
     if price_to:
         products_qs = products_qs.filter(discounted_price__lte=price_to)
 
-    if vendor:
-        products_qs = products_qs.filter(vendor_id=vendor)
-
     return products_qs
 
+@products_controller.get('products/{product_id}', response={
+    200: ProductOut,
+    404: MessageOut
+})
+def productDetails(request,product_id:UUID4):
+    try:
+        products_qs = Product.objects.get(id=product_id)
 
+    except products_qs.DoesNotExist:
+        return 404, {'detail': 'No products found'}
+        
+
+    return products_qs
 """
 # product = Product.objects.all().select_related('merchant', 'category', 'vendor', 'label')
     # print(product)
@@ -358,3 +367,22 @@ def checkout(request, address_in: AddressIn, city_name : str, note : str = None)
     checkout.address = address_qs
     checkout.save()
     return 200, {'detail': 'Checkout Created successfully'}
+
+
+
+
+@category_controllers.get('categories', response=List[CategoryOut])
+def list_categories(request):
+    return Category.objects.all()
+
+
+@category_controllers.get('categories/{category_id}', response=List[ProductTypeOut])
+def category_products(request,category_id:UUID4):
+    types = Category.objects.get(id=category_id).types.all()
+    return types
+
+@category_controllers.get('category//{category_id}/{type_id}', response=List[ProductOut])
+def products_category_type(request,category_id:UUID4,type_id:UUID4):
+    products = Product.objects.filter(category = Category.objects.get(id=category_id),product_type = ProductType.objects.get(id=type_id))  
+    return products
+
