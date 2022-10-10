@@ -17,6 +17,7 @@ class Product(Entity):
     img = models.ImageField('image', upload_to='products_images/',null = True)
     price = models.DecimalField('price', max_digits=10, decimal_places=2)
     discounted_price = models.DecimalField('discounted price', max_digits=10, decimal_places=2)
+    product_size = models.ManyToManyField('commerce.ProductSize',verbose_name="Size",related_name='order')
     
     category = models.ForeignKey('commerce.Category', verbose_name='category', related_name='products',
                                  null=True,
@@ -48,6 +49,7 @@ class Order(Entity):
     note = models.CharField('note', null=True, blank=True, max_length=255)
     ref_code = models.CharField('ref code', max_length=255)
     ordered = models.BooleanField('ordered')
+
     items = models.ManyToManyField('commerce.Item', verbose_name='items', related_name='order')
 
     def __str__(self):
@@ -72,6 +74,10 @@ class Item(Entity):
     item_size = models.ForeignKey('commerce.ProductSize',null=True,on_delete=models.SET_NULL,verbose_name="Size",related_name='items')
 
     ordered = models.BooleanField('ordered', default=False)
+    @property
+    def item_total(self):
+        return self.product.price * self.item_qty
+
 
     def __str__(self):
         return self.product.name
@@ -80,6 +86,8 @@ class Item(Entity):
 
 class ProductSize(Entity):
     size = models.CharField("Size",max_length=20)
+    def __str__(self):
+        return self.size
 
 
 class OrderStatus(Entity):
@@ -199,9 +207,22 @@ class Address(Entity):
                              on_delete=models.CASCADE)
     work_address = models.BooleanField('work address', null=True, blank=True)
     address1 = models.CharField('address1', max_length=255)
+    address2 = models.CharField('address2', null=True, blank=True, max_length=500)
+    city = models.CharField('city', null=True, blank=True, max_length=100)
+    phone = models.CharField('phone', max_length=255)
+
+    def __str__(self):
+        return f'{self.user.first_name} - {self.address1} - {self.address2} - {self.phone}'
+
+
+""" class Address2(Entity):
+    user = models.ForeignKey(User, verbose_name='user', related_name='address',
+                             on_delete=models.CASCADE)
+    work_address = models.BooleanField('work address', null=True, blank=True)
+    address1 = models.CharField('address1', max_length=255)
     address2 = models.CharField('address2', null=True, blank=True, max_length=255)
     city = models.ForeignKey(City, related_name='addresses', on_delete=models.CASCADE)
     phone = models.CharField('phone', max_length=255)
 
     def __str__(self):
-        return f'{self.user.first_name} - {self.address1} - {self.address2} - {self.phone}'
+        return f'{self.user.first_name} - {self.address1} - {self.address2} - {self.phone}' """

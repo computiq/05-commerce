@@ -50,11 +50,14 @@ class CategoryOut(Schema):
 
 CategoryOut.update_forward_refs()
 
-
+class Size_Out(Schema) :
+    id : UUID4 = None
+    size : str = None
 class ProductOut(ModelSchema):
     label: LabelOut
     category: CategoryOut
     product_type : ProductTypeOut = None
+    product_size : list[Size_Out] 
 
     class Config:
         model = Product
@@ -90,6 +93,7 @@ class ItemSchema(Schema):
     product: ProductOut
     item_qty: int
     ordered: bool
+    item_total : str = None
 
 
 class ItemCreate(Schema):
@@ -120,7 +124,8 @@ class AddressOut(UUIDSchema):
 class AddressIn(Schema):
     work_address : bool
     address1 : str
-    address2 : str  
+    address2 : str 
+    city : str 
     phone : str
 
 

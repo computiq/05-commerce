@@ -10,7 +10,7 @@ from ninja import Router
 from pydantic import UUID4
 
 from account.authorization import GlobalAuth
-from commerce.models import Address, Product, Category, City, Vendor, Item, Order, OrderStatus,ProductType
+from commerce.models import Address, Product, Category, City, ProductSize, Vendor, Item, Order, OrderStatus,ProductType
 from commerce.schemas import AddressIn,AddressOut,ProductTypeOut, ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate,CategoryOut
 from config.utils.schemas import MessageOut
 import string
@@ -239,6 +239,8 @@ def delete_city(request, id: UUID4):
 def view_cart(request):
     user = get_object_or_404(User,id=request.auth['pk'])
     cart_items = Item.objects.filter(user=user, ordered=False)
+    for i in cart_items :
+        print(i.item_total)
 
     if cart_items:
         return cart_items
@@ -250,12 +252,19 @@ def view_cart(request):
     200: MessageOut,
     # 400: MessageOut
 })
-def add_update_cart(request, item_in: ItemCreate):
+def add_update_cart(request, item_in: ItemCreate,size_id:str=None):
     try:
         user = get_object_or_404(User,id=request.auth['pk'])
         item = Item.objects.get(product_id=item_in.product_id, user=user)
         item.item_qty += 1
         item.save()
+        if(size_id):
+            user = get_object_or_404(User,id=request.auth['pk'])
+            product_size = ProductSize.objects.get(id = size_id)
+            item = Item.objects.get(product_id=item_in.product_id, user=user,product_size=product_size)
+            item.item_qty += 1
+            item.item_size = product_size
+            item.save()
     except Item.DoesNotExist:
         Item.objects.create(**item_in.dict(), user=user)
 
@@ -277,7 +286,7 @@ def reduce_item_quantity(request, id: UUID4):
     return 200, {'detail': 'Item quantity reduced successfully!'}
 
 
-@order_controller.delete('item/{id}', auth=GlobalAuth(),response={
+@order_controller.delete('/item/{id}', auth=GlobalAuth(),response={
     204: MessageOut
 })
 def delete_item(request, id: UUID4):
@@ -303,7 +312,7 @@ def increase_item_quantity(request, id: UUID4):
 
 
 @order_controller.post('create-order', auth=GlobalAuth(), response={200: MessageOut,201: MessageOut})
-def create_update_order(request):
+def create_update_order(request,address_in: AddressIn):
     # set ref_code to a randomly generated 6 alphanumeric value
     ref_code = ''.join(random.sample(string.ascii_letters+string.digits,6))
     # get status 
@@ -312,45 +321,31 @@ def create_update_order(request):
     except OrderStatus.DoesNotExist :
         get_status = OrderStatus.objects.create(title = "NEW",is_default = True)
     user = get_object_or_404(User,id=request.auth['pk'])
+    address_qs = Address(**address_in.dict(),user =user)
+    address_qs.save()
+    
 
     # take all current items (ordered=False) 
     items_qs = Item.objects.filter(user = user,ordered = False)
-    order_qs = Order.objects.filter(user=user,ordered = False)
-    items_qs_true = Item.objects.filter(user=user,ordered = True)
-
-    if order_qs.exists():
-        order = order_qs.first()
-        # add items to the order
-        for i in items_qs : 
-            for j in items_qs_true:
-                if i.product.id == j.product.id and j.order.first().ordered ==False :
-                    j.item_qty += i.item_qty
-                    j.save()
-                    i.delete()
-                    items_qs.update()
-                else :           
-                    i.ordered = True
-                    i.save()   
-        order.items.add(*items_qs)
-        order.save()
+    order_qs = Order.objects.filter(user=user,ordered = False).update(ordered = True)
+    
+    if order_qs:
         return 200, {"detail": "Order Updated Successfully"}
     else:
-        for i in items_qs :
-            i.ordered = True
-            i.save()
-        order = Order.objects.create(user=user,status = get_status,ref_code =ref_code,ordered = False)
+        order = Order.objects.create(user=user,status = get_status,ref_code =ref_code,ordered = True,address=address_qs)
         order.items.add(*items_qs)
-        order.save()
         return 201, {"detail": "Order Created Successfully"}
 
 
+
+
+
 @checkout_controller.post('/create/', auth=GlobalAuth(),response={200: MessageOut, 404: MessageOut})
-def checkout(request, address_in: AddressIn, city_name : str, note : str = None):
+def checkout(request, address_in: AddressIn, note : str = None):
     # crete city
-    city = City.objects.create(name = city_name)
     user = get_object_or_404(User,id=request.auth['pk'])
     # create address
-    address_qs = Address(**address_in.dict(),user =user,city = city)
+    address_qs = Address(**address_in.dict(),user =user)
     address_qs.save()
     # get Order
     try:
@@ -367,7 +362,6 @@ def checkout(request, address_in: AddressIn, city_name : str, note : str = None)
     checkout.address = address_qs
     checkout.save()
     return 200, {'detail': 'Checkout Created successfully'}
-
 
 
 
